@@ -134,7 +134,7 @@ public class CommandesPanel extends JPanel {
                             for (OrderItem existingItem : currentOrderItems) {
                                 if (existingItem.getStockItemId() == selectedItem.getId()) {
                                     totalQuantityRequested += existingItem.getQuantity();
-                                }
+                                }   
                             }
 
                             // Si la quantité dépasse le stock disponible, ajuster le spinner
@@ -257,8 +257,8 @@ public class CommandesPanel extends JPanel {
                 String.format("%.2f €", orderItem.getTotalPrice())
         });
 
-        // Réinitialiser le spinner
-        quantitySpinner.setValue(1);
+        // Réinitialiser le spinner à 1
+        SwingUtilities.invokeLater(() -> quantitySpinner.setValue(1));
     }
 
     private void createOrder() {
