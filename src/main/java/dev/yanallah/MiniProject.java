@@ -1,5 +1,6 @@
 package dev.yanallah;
 
+import dev.yanallah.database.Database;
 import dev.yanallah.ui.MainFrame;
 
 public class MiniProject {
@@ -8,9 +9,12 @@ public class MiniProject {
     private String[] args;
     private MainFrame frame;
 
+    private Database database;
+
     public MiniProject(String[] args) {
         this.args = args;
         instance = this;
+        this.database = new Database();
     }
 
     public void start(){

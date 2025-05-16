@@ -1,9 +1,9 @@
 package dev.yanallah.ui;
 
-import dev.yanallah.utils.References;
-import dev.yanallah.ui.panels.StocksPanel;
 import dev.yanallah.ui.panels.CommandesPanel;
+import dev.yanallah.ui.panels.StocksPanel;
 import dev.yanallah.ui.panels.UtilisateursPanel;
+import dev.yanallah.utils.References;
 
 import javax.swing.*;
 import java.awt.*;
@@ -82,7 +82,7 @@ public class MainFrame extends JFrame {
         button.setFocusPainted(false);
         button.setBorderPainted(false);
         button.setFont(new Font("Arial", Font.PLAIN, 14));
-        
+
         // Effet hover
         button.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -93,7 +93,7 @@ public class MainFrame extends JFrame {
                 button.setBackground(new Color(70, 70, 70));
             }
         });
-        
+
         return button;
     }
 }
