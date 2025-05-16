@@ -26,6 +26,10 @@ public class MiniProject {
         return frame;
     }
 
+    public Database getDatabase() {
+        return database;
+    }
+
     public static MiniProject getInstance() {
         return instance;
     }
