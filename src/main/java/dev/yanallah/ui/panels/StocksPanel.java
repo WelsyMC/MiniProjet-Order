@@ -88,11 +88,11 @@ public class StocksPanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
         // Panel pour les informations supplémentaires et statistiques
-        infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        infoPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         infoPanel.setBackground(Color.WHITE);
-        infoPanel.setBorder(BorderFactory.createEmptyBorder(5, 20, 15, 20));
+        infoPanel.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
 
-        totalItemsLabel = new JLabel("Total des articles: 0");
+        totalItemsLabel = new JLabel("Total des articles dans le stock: 0", SwingConstants.CENTER);
         totalItemsLabel.setFont(new Font("Arial", Font.BOLD, 14));
         infoPanel.add(totalItemsLabel);
 
@@ -117,7 +117,8 @@ public class StocksPanel extends JPanel {
         }
 
         // Mettre à jour les informations
-        totalItemsLabel.setText("Total des articles: " + stocks.size());
+        final int totalItems = stocks.stream().reduce(0, (sub, el) -> sub + el.getQuantityInStock(), Integer::sum);
+        totalItemsLabel.setText("Total des articles dans le stock: " + totalItems);
     }
 
     // Méthode pour rafraîchir les données
