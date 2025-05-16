@@ -17,6 +17,7 @@ public class CommandesPanel extends JPanel {
     private JTable ordersTable;
     private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
+    private JDialog createOrderDialog;
     private JPanel formPanel;
     private JComboBox<Client> clientComboBox;
     private JComboBox<StockItem> stockItemComboBox;
@@ -70,14 +71,46 @@ public class CommandesPanel extends JPanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 20));
         scrollPane.setPreferredSize(new Dimension(800, 200));
 
-        // Panel pour le formulaire de création de commande
-        formPanel = createFormPanel();
-        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 20, 20));
+        // Bouton pour créer une nouvelle commande
+        JButton addOrderButton = new JButton("Nouvelle Commande");
+        addOrderButton.setBackground(new Color(70, 130, 180));
+        addOrderButton.setForeground(Color.WHITE);
+        addOrderButton.setFocusPainted(false);
+        addOrderButton.addActionListener(e -> showCreateOrderDialog());
+
+        // Panel pour le bouton
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.add(addOrderButton);
 
         // Ajout des composants au panel principal
         this.add(titleLabel, BorderLayout.NORTH);
         this.add(scrollPane, BorderLayout.CENTER);
-        this.add(formPanel, BorderLayout.SOUTH);
+        this.add(buttonPanel, BorderLayout.SOUTH);
+    }
+
+    private void showCreateOrderDialog() {
+        createOrderDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Nouvelle Commande", true);
+        createOrderDialog.setLayout(new BorderLayout());
+        createOrderDialog.setSize(800, 600);
+        createOrderDialog.setLocationRelativeTo(this);
+
+        // Initialiser la liste des items de la commande en cours
+        currentOrderItems = new ArrayList<>();
+
+        // Créer le formulaire
+        formPanel = createFormPanel();
+        createOrderDialog.add(formPanel, BorderLayout.CENTER);
+
+        // Bouton pour fermer la fenêtre
+        JButton closeButton = new JButton("Fermer");
+        closeButton.addActionListener(e -> createOrderDialog.dispose());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.add(closeButton);
+        createOrderDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        createOrderDialog.setVisible(true);
     }
 
     private JPanel createFormPanel() {
@@ -216,9 +249,6 @@ public class CommandesPanel extends JPanel {
         panel.add(orderItemsScrollPane, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
-        // Initialiser la liste des items de la commande en cours
-        currentOrderItems = new ArrayList<>();
-
         return panel;
     }
 
@@ -284,6 +314,9 @@ public class CommandesPanel extends JPanel {
         // Réinitialiser le formulaire
         currentOrderItems.clear();
         orderItemsTableModel.setRowCount(0);
+
+        // Fermer la fenêtre de dialogue
+        createOrderDialog.dispose();
 
         // Rafraîchir la liste des commandes
         refreshData();
