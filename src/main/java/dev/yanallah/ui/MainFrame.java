@@ -3,7 +3,6 @@ package dev.yanallah.ui;
 import dev.yanallah.ui.panels.ClientsPanel;
 import dev.yanallah.ui.panels.CommandesPanel;
 import dev.yanallah.ui.panels.StocksPanel;
-import dev.yanallah.ui.panels.UtilisateursPanel;
 import dev.yanallah.utils.References;
 
 import javax.swing.*;
@@ -38,17 +37,15 @@ public class MainFrame extends JFrame {
         JButton stocksButton = createNavButton("Stocks");
         JButton commandesButton = createNavButton("Commandes");
         JButton clientsButton = createNavButton("Clients");
-        JButton utilisateursButton = createNavButton("Utilisateurs");
 
         // Ajout des boutons au panel de navigation
-        navigationPanel.add(Box.createVerticalStrut(20));
-        navigationPanel.add(stocksButton);
-        navigationPanel.add(Box.createVerticalStrut(10));
-        navigationPanel.add(commandesButton);
         navigationPanel.add(Box.createVerticalStrut(10));
         navigationPanel.add(clientsButton);
         navigationPanel.add(Box.createVerticalStrut(10));
-        navigationPanel.add(utilisateursButton);
+        navigationPanel.add(stocksButton);
+        navigationPanel.add(Box.createVerticalStrut(10));
+        navigationPanel.add(commandesButton);
+
 
         // Création du panel de contenu avec CardLayout
         cardLayout = new CardLayout();
@@ -58,13 +55,11 @@ public class MainFrame extends JFrame {
         StocksPanel stocksPanel = new StocksPanel();
         CommandesPanel commandesPanel = new CommandesPanel();
         ClientsPanel clientsPanel = new ClientsPanel();
-        UtilisateursPanel utilisateursPanel = new UtilisateursPanel();
 
         // Ajout des panneaux au CardLayout
         contentPanel.add(stocksPanel, "Stocks");
         contentPanel.add(commandesPanel, "Commandes");
         contentPanel.add(clientsPanel, "Clients");
-        contentPanel.add(utilisateursPanel, "Utilisateurs");
 
         // Ajout des panels à la frame
         this.add(navigationPanel, BorderLayout.WEST);
@@ -74,10 +69,9 @@ public class MainFrame extends JFrame {
         stocksButton.addActionListener(e -> cardLayout.show(contentPanel, "Stocks"));
         commandesButton.addActionListener(e -> cardLayout.show(contentPanel, "Commandes"));
         clientsButton.addActionListener(e -> cardLayout.show(contentPanel, "Clients"));
-        utilisateursButton.addActionListener(e -> cardLayout.show(contentPanel, "Utilisateurs"));
 
         // Afficher le panel Stocks par défaut
-        cardLayout.show(contentPanel, "Stocks");
+        cardLayout.show(contentPanel, "Clients");
     }
 
     private JButton createNavButton(String text) {
