@@ -184,7 +184,13 @@ public class CommandesPanel extends JPanel {
         clientComboBox = new JComboBox<>(MiniProject.getInstance().getDatabase().getAllClients().toArray(new Client[0]));
         clientComboBox.setPreferredSize(new Dimension(200, 30));
         if (selectedOrder != null) {
-            clientComboBox.setSelectedItem(selectedOrder.getClient());
+            for (int i = 0; i < clientComboBox.getItemCount(); i++) {
+                Client client = clientComboBox.getItemAt(i);
+                if (client.getId() == selectedOrder.getClientId()) {
+                    clientComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
         }
 
         // ComboBox pour les items de stock
