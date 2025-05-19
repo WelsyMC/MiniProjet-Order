@@ -60,6 +60,8 @@ public class CommandesPanel extends JPanel {
         ordersTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         ordersTable.setSelectionBackground(new Color(184, 207, 229));
         ordersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ordersTable.setShowGrid(true);
+        ordersTable.setGridColor(new Color(220, 220, 220));
 
         // Ajouter le double-clic sur la table
         ordersTable.addMouseListener(new java.awt.event.MouseAdapter() {

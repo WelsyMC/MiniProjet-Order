@@ -49,6 +49,8 @@ public class ClientsPanel extends JPanel {
         clientsTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         clientsTable.setSelectionBackground(new Color(184, 207, 229));
         clientsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        clientsTable.setShowGrid(true);
+        clientsTable.setGridColor(new Color(220, 220, 220));
 
         // Centrer les valeurs pour toutes les colonnes
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
