@@ -376,6 +376,75 @@ public class Database {
         }
     }
 
+    public void updateOrder(Order order) {
+        String orderSql = "UPDATE orders SET client_id = ?, order_date = ?, status = ? WHERE id = ?";
+        String deleteItemsSql = "DELETE FROM order_items WHERE order_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL)) {
+            conn.setAutoCommit(false);
+            try {
+                // Mettre à jour la commande
+                try (PreparedStatement pstmt = conn.prepareStatement(orderSql)) {
+                    pstmt.setInt(1, order.getClientId());
+                    pstmt.setString(2, order.getOrderDate().toString());
+                    pstmt.setString(3, order.getStatus().name());
+                    pstmt.setInt(4, order.getId());
+                    pstmt.executeUpdate();
+                }
+
+                // Supprimer les anciens items
+                try (PreparedStatement pstmt = conn.prepareStatement(deleteItemsSql)) {
+                    pstmt.setInt(1, order.getId());
+                    pstmt.executeUpdate();
+                }
+
+                // Ajouter les nouveaux items - Utilisez la même connexion
+                for (OrderItem item : order.getItems()) {
+                    addOrderItem(conn, order.getId(), item);
+                }
+
+                conn.commit();
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Modifier cette méthode pour accepter une connexion existante
+    private void addOrderItem(Connection conn, int orderId, OrderItem item) throws SQLException {
+        String sql = "INSERT INTO order_items (order_id, stock_item_id, quantity, unit_price) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            pstmt.setInt(1, orderId);
+            pstmt.setInt(2, item.getStockItemId());
+            pstmt.setInt(3, item.getQuantity());
+            pstmt.setDouble(4, item.getUnitPrice());
+            pstmt.executeUpdate();
+
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    item.setId(generatedKeys.getInt(1));
+                }
+            }
+
+            // Mettre à jour le stock en utilisant la même connexion
+            updateStockQuantity(conn, item.getStockItemId(), -item.getQuantity());
+        }
+    }
+
+    // Modifier cette méthode pour accepter une connexion existante
+    private void updateStockQuantity(Connection conn, int stockItemId, int quantityChange) throws SQLException {
+        String sql = "UPDATE stock_items SET quantity_in_stock = quantity_in_stock + ? WHERE id = ?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, quantityChange);
+            pstmt.setInt(2, stockItemId);
+            pstmt.executeUpdate();
+        }
+    }
     private void initializeDemoData() {
         // Vérifier si des données existent déjà
         if (getAllClients().isEmpty()) {

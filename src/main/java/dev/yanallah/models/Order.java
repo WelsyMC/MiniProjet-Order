@@ -53,6 +53,10 @@ public class Order {
         return client;
     }
 
+    public void setClientId(int clientId) {
+        this.clientId = clientId;
+    }
+
     // Setters
     public void setClient(Client client) {
         this.client = client;

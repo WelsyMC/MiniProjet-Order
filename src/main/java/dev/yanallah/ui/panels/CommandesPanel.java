@@ -18,6 +18,7 @@ public class CommandesPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
     private JDialog createOrderDialog;
+    private JDialog editOrderDialog;
     private JPanel formPanel;
     private JComboBox<Client> clientComboBox;
     private JComboBox<StockItem> stockItemComboBox;
@@ -25,6 +26,7 @@ public class CommandesPanel extends JPanel {
     private List<OrderItem> currentOrderItems;
     private JTable orderItemsTable;
     private DefaultTableModel orderItemsTableModel;
+    private Order selectedOrder;
 
     public CommandesPanel() {
         this.initComponents();
@@ -58,6 +60,19 @@ public class CommandesPanel extends JPanel {
         ordersTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
         ordersTable.setSelectionBackground(new Color(184, 207, 229));
         ordersTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        // Ajouter le double-clic sur la table
+        ordersTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    int row = ordersTable.getSelectedRow();
+                    if (row != -1) {
+                        selectedOrder = orders.get(row);
+                        showEditOrderDialog();
+                    }
+                }
+            }
+        });
 
         // Centrer les valeurs pour toutes les colonnes
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
@@ -113,6 +128,45 @@ public class CommandesPanel extends JPanel {
         createOrderDialog.setVisible(true);
     }
 
+    private void showEditOrderDialog() {
+        editOrderDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Modifier la commande #" + selectedOrder.getId(), true);
+        editOrderDialog.setLayout(new BorderLayout());
+        editOrderDialog.setSize(800, 600);
+        editOrderDialog.setLocationRelativeTo(this);
+
+        // Initialiser la liste des items de la commande
+        currentOrderItems = new ArrayList<>(selectedOrder.getItems());
+
+        // Créer le formulaire
+        formPanel = createFormPanel();
+        editOrderDialog.add(formPanel, BorderLayout.CENTER);
+
+        // Bouton pour fermer la fenêtre
+        JButton closeButton = new JButton("Fermer");
+        closeButton.addActionListener(e -> editOrderDialog.dispose());
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.add(closeButton);
+        editOrderDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Charger les items existants
+        loadOrderItems();
+
+        editOrderDialog.setVisible(true);
+    }
+
+    private void loadOrderItems() {
+        orderItemsTableModel.setRowCount(0);
+        for (OrderItem item : currentOrderItems) {
+            orderItemsTableModel.addRow(new Object[]{
+                    item.getStockItem().getName(),
+                    item.getQuantity(),
+                    String.format("%.2f €", item.getUnitPrice()),
+                    String.format("%.2f €", item.getTotalPrice())
+            });
+        }
+    }
+
     private JPanel createFormPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
@@ -128,6 +182,9 @@ public class CommandesPanel extends JPanel {
         // ComboBox pour les clients
         clientComboBox = new JComboBox<>(MiniProject.getInstance().getDatabase().getAllClients().toArray(new Client[0]));
         clientComboBox.setPreferredSize(new Dimension(200, 30));
+        if (selectedOrder != null) {
+            clientComboBox.setSelectedItem(selectedOrder.getClient());
+        }
 
         // ComboBox pour les items de stock
         stockItemComboBox = new JComboBox<>(MiniProject.getInstance().getDatabase().getAllStockItems().toArray(new StockItem[0]));
@@ -230,19 +287,39 @@ public class CommandesPanel extends JPanel {
         };
         orderItemsTable = new JTable(orderItemsTableModel);
         orderItemsTable.setRowHeight(25);
+
+        // Ajouter le double-clic sur la table des items
+        orderItemsTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                if (evt.getClickCount() == 2) {
+                    int row = orderItemsTable.getSelectedRow();
+                    if (row != -1) {
+                        OrderItem item = currentOrderItems.get(row);
+                        showEditItemDialog(item, row);
+                    }
+                }
+            }
+        });
+
         JScrollPane orderItemsScrollPane = new JScrollPane(orderItemsTable);
 
-        // Bouton pour créer la commande
-        JButton createOrderButton = new JButton("Créer la commande");
-        createOrderButton.setBackground(new Color(46, 139, 87));
-        createOrderButton.setForeground(Color.WHITE);
-        createOrderButton.setFocusPainted(false);
-        createOrderButton.addActionListener(e -> createOrder());
+        // Bouton pour sauvegarder la commande
+        JButton saveOrderButton = new JButton(selectedOrder != null ? "Mettre à jour la commande" : "Créer la commande");
+        saveOrderButton.setBackground(new Color(46, 139, 87));
+        saveOrderButton.setForeground(Color.WHITE);
+        saveOrderButton.setFocusPainted(false);
+        saveOrderButton.addActionListener(e -> {
+            if (selectedOrder != null) {
+                updateOrder();
+            } else {
+                createOrder();
+            }
+        });
 
-        // Panel pour le bouton de création
+        // Panel pour le bouton de sauvegarde
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBackground(Color.WHITE);
-        buttonPanel.add(createOrderButton);
+        buttonPanel.add(saveOrderButton);
 
         // Ajout des composants au panel principal
         panel.add(selectionPanel, BorderLayout.NORTH);
@@ -250,6 +327,89 @@ public class CommandesPanel extends JPanel {
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
         return panel;
+    }
+
+    private void showEditItemDialog(OrderItem item, int row) {
+        JDialog dialog = new JDialog(editOrderDialog != null ? editOrderDialog : createOrderDialog, "Modifier l'item", true);
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(400, 200);
+        dialog.setLocationRelativeTo(editOrderDialog != null ? editOrderDialog : createOrderDialog);
+
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // Spinner pour la quantité
+        SpinnerNumberModel spinnerModel = new SpinnerNumberModel(item.getQuantity(), 1, 100, 1);
+        JSpinner quantitySpinner = new JSpinner(spinnerModel);
+        quantitySpinner.setPreferredSize(new Dimension(100, 30));
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        panel.add(new JLabel("Quantité:"), gbc);
+        gbc.gridx = 1;
+        panel.add(quantitySpinner, gbc);
+
+        // Boutons
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton saveButton = new JButton("Enregistrer");
+        JButton deleteButton = new JButton("Supprimer");
+        JButton cancelButton = new JButton("Annuler");
+
+        saveButton.addActionListener(e -> {
+            int newQuantity = (Integer) quantitySpinner.getValue();
+            item.setQuantity(newQuantity);
+            currentOrderItems.set(row, item);
+            loadOrderItems();
+            dialog.dispose();
+        });
+
+        deleteButton.addActionListener(e -> {
+            currentOrderItems.remove(row);
+            loadOrderItems();
+            dialog.dispose();
+        });
+
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(saveButton);
+        buttonPanel.add(deleteButton);
+        buttonPanel.add(cancelButton);
+
+        dialog.add(panel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
+    }
+
+    private void updateOrder() {
+        if (currentOrderItems.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez ajouter au moins un item à la commande",
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        Client selectedClient = (Client) clientComboBox.getSelectedItem();
+        selectedOrder.setClientId(selectedClient.getId());
+        selectedOrder.getItems().clear();
+        selectedOrder.getItems().addAll(currentOrderItems);
+
+        // Mettre à jour la commande dans la base de données
+        MiniProject.getInstance().getDatabase().updateOrder(selectedOrder);
+
+        // Fermer la fenêtre de dialogue
+        editOrderDialog.dispose();
+
+        // Rafraîchir la liste des commandes
+        refreshData();
+
+        JOptionPane.showMessageDialog(this,
+                "Commande mise à jour avec succès",
+                "Succès",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void addItemToOrder() {
