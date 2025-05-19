@@ -12,7 +12,6 @@ public class Database {
     private static final String DB_URL = "jdbc:sqlite:data.db";
 
     public Database() {
-        System.out.println("[Database] Database opened.");
         createTables();
         initializeDemoData();
     }

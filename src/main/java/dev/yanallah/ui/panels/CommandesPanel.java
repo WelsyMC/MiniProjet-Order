@@ -87,9 +87,8 @@ public class CommandesPanel extends JPanel {
         scrollPane.setPreferredSize(new Dimension(800, 200));
 
         // Bouton pour créer une nouvelle commande
-        JButton addOrderButton = new JButton("Nouvelle Commande");
+        JButton addOrderButton = new JButton("Nouvelle commande");
         addOrderButton.setBackground(new Color(70, 130, 180));
-        addOrderButton.setForeground(Color.WHITE);
         addOrderButton.setFocusPainted(false);
         addOrderButton.addActionListener(e -> showCreateOrderDialog());
 
@@ -249,7 +248,6 @@ public class CommandesPanel extends JPanel {
         // Bouton pour ajouter un item
         JButton addItemButton = new JButton("Ajouter l'item");
         addItemButton.setBackground(new Color(70, 130, 180));
-        addItemButton.setForeground(Color.WHITE);
         addItemButton.setFocusPainted(false);
         addItemButton.addActionListener(e -> addItemToOrder());
 
@@ -306,7 +304,6 @@ public class CommandesPanel extends JPanel {
         // Bouton pour sauvegarder la commande
         JButton saveOrderButton = new JButton(selectedOrder != null ? "Mettre à jour la commande" : "Créer la commande");
         saveOrderButton.setBackground(new Color(46, 139, 87));
-        saveOrderButton.setForeground(Color.WHITE);
         saveOrderButton.setFocusPainted(false);
         saveOrderButton.addActionListener(e -> {
             if (selectedOrder != null) {

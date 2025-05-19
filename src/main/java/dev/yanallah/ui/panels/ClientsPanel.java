@@ -119,7 +119,6 @@ public class ClientsPanel extends JPanel {
         // Bouton d'ajout
         JButton addButton = new JButton("Ajouter un client");
         addButton.setBackground(new Color(70, 130, 180));
-        addButton.setForeground(Color.WHITE);
         addButton.setFocusPainted(false);
         addButton.addActionListener(e -> addClient());
 
