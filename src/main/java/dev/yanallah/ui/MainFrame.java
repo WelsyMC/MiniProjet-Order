@@ -2,6 +2,7 @@ package dev.yanallah.ui;
 
 import dev.yanallah.ui.panels.ClientsPanel;
 import dev.yanallah.ui.panels.CommandesPanel;
+import dev.yanallah.ui.panels.DashboardPanel;
 import dev.yanallah.ui.panels.StocksPanel;
 import dev.yanallah.utils.References;
 
@@ -34,11 +35,14 @@ public class MainFrame extends JFrame {
         navigationPanel.setBackground(new Color(51, 51, 51));
 
         // Création des boutons de navigation
+        JButton homeButton = createNavButton("Home");
         JButton stocksButton = createNavButton("Stocks");
         JButton commandesButton = createNavButton("Commandes");
         JButton clientsButton = createNavButton("Clients");
 
         // Ajout des boutons au panel de navigation
+        navigationPanel.add(Box.createVerticalStrut(10));
+        navigationPanel.add(homeButton);
         navigationPanel.add(Box.createVerticalStrut(10));
         navigationPanel.add(clientsButton);
         navigationPanel.add(Box.createVerticalStrut(10));
@@ -55,11 +59,13 @@ public class MainFrame extends JFrame {
         StocksPanel stocksPanel = new StocksPanel();
         CommandesPanel commandesPanel = new CommandesPanel();
         ClientsPanel clientsPanel = new ClientsPanel();
+        DashboardPanel dashboardPanel = new DashboardPanel();
 
         // Ajout des panneaux au CardLayout
         contentPanel.add(stocksPanel, "Stocks");
         contentPanel.add(commandesPanel, "Commandes");
         contentPanel.add(clientsPanel, "Clients");
+        contentPanel.add(dashboardPanel, "Dashboard");
 
         // Ajout des panels à la frame
         this.add(navigationPanel, BorderLayout.WEST);
@@ -69,9 +75,10 @@ public class MainFrame extends JFrame {
         stocksButton.addActionListener(e -> cardLayout.show(contentPanel, "Stocks"));
         commandesButton.addActionListener(e -> cardLayout.show(contentPanel, "Commandes"));
         clientsButton.addActionListener(e -> cardLayout.show(contentPanel, "Clients"));
+        homeButton.addActionListener(e -> cardLayout.show(contentPanel, "Dashboard"));
 
         // Afficher le panel Stocks par défaut
-        cardLayout.show(contentPanel, "Clients");
+        cardLayout.show(contentPanel, "Home");
     }
 
     private JButton createNavButton(String text) {
