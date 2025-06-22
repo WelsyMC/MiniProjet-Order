@@ -2,6 +2,7 @@ package dev.yanallah.ui.panels;
 
 import dev.yanallah.MiniProject;
 import dev.yanallah.models.*;
+import dev.yanallah.utils.BonGenerator;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -269,8 +270,36 @@ public class CommandesPanel extends JPanel {
 
         // Boutons d'action
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        
+        // Boutons conditionnels selon le statut
+        OrderStatus status = selectedOrder.getStatus();
+        
+        // Bouton "Bon de commande" pour les statuts "En préparation" et "Envoyée"
+        if (status == OrderStatus.PREPARING || status == OrderStatus.SENT) {
+            JButton bonCommandeButton = new JButton("Générer bon de commande");
+            bonCommandeButton.setBackground(new Color(23, 162, 184)); // Bleu info
+            bonCommandeButton.setFocusPainted(false);
+            bonCommandeButton.addActionListener(e -> {
+                BonGenerator.generateCommande(selectedOrder.getClient(), selectedOrder);
+            });
+            buttonPanel.add(bonCommandeButton);
+        }
+        
+        // Bouton "Bon de livraison" uniquement pour le statut "Envoyée"
+        if (status == OrderStatus.SENT) {
+            JButton bonLivraisonButton = new JButton("Générer bon de livraison");
+            bonLivraisonButton.setBackground(new Color(70, 130, 180)); // Bleu primary
+            bonLivraisonButton.setFocusPainted(false);
+            bonLivraisonButton.addActionListener(e -> {
+                BonGenerator.generateLivraison(selectedOrder.getClient(), selectedOrder);
+            });
+            buttonPanel.add(bonLivraisonButton);
+        }
+        
+        // Bouton "Modifier" (toujours présent)
         JButton editButton = new JButton("Modifier");
         editButton.setBackground(new Color(255, 193, 7));
+        editButton.setFocusPainted(false);
         editButton.addActionListener(e -> {
             viewOrderDialog.dispose();
             showEditOrderDialog();
