@@ -18,50 +18,42 @@ public class Database {
 
     private void createTables() {
         // Table des stocks
-        String stockTableSql = """
-                    CREATE TABLE IF NOT EXISTS stock_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        quantity_in_stock INTEGER NOT NULL,
-                        price REAL NOT NULL
-                    );
-                """;
+        String stockTableSql = "CREATE TABLE IF NOT EXISTS stock_items (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "name TEXT NOT NULL," +
+                "quantity_in_stock INTEGER NOT NULL," +
+                "price REAL NOT NULL" +
+                ")";
 
         // Table des clients
-        String clientTableSql = """
-                    CREATE TABLE IF NOT EXISTS clients (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nom TEXT NOT NULL,
-                        prenom TEXT NOT NULL,
-                        email TEXT NOT NULL,
-                        telephone TEXT NOT NULL,
-                        adresse TEXT NOT NULL
-                    );
-                """;
+        String clientTableSql = "CREATE TABLE IF NOT EXISTS clients (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "nom TEXT NOT NULL," +
+                "prenom TEXT NOT NULL," +
+                "email TEXT NOT NULL," +
+                "telephone TEXT NOT NULL," +
+                "adresse TEXT NOT NULL" +
+                ")";
 
         // Table des commandes
-        String orderTableSql = """
-                    CREATE TABLE IF NOT EXISTS orders (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        client_id INTEGER NOT NULL,
-                        order_date TEXT NOT NULL,
-                        status TEXT NOT NULL,
-                        FOREIGN KEY (client_id) REFERENCES clients (id)
-                    );
-                """;
+        String orderTableSql = "CREATE TABLE IF NOT EXISTS orders (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "client_id INTEGER NOT NULL," +
+                "order_date TEXT NOT NULL," +
+                "status TEXT NOT NULL," +
+                "FOREIGN KEY (client_id) REFERENCES clients (id)" +
+                ")";
 
         // Table des items de commande
-        String orderItemTableSql = """
-                    CREATE TABLE IF NOT EXISTS order_items (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER NOT NULL,
-                        stock_item_id INTEGER NOT NULL,
-                        quantity INTEGER NOT NULL,
-                        unit_price REAL NOT NULL,
-                        FOREIGN KEY (order_id) REFERENCES orders (id),
-                        FOREIGN KEY (stock_item_id) REFERENCES stock_items (id)
-                    );
-                """;
+        String orderItemTableSql = "CREATE TABLE IF NOT EXISTS order_items (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                "order_id INTEGER NOT NULL," +
+                "stock_item_id INTEGER NOT NULL," +
+                "quantity INTEGER NOT NULL," +
+                "unit_price REAL NOT NULL," +
+                "FOREIGN KEY (order_id) REFERENCES orders (id)," +
+                "FOREIGN KEY (stock_item_id) REFERENCES stock_items (id)" +
+                ")";
 
         try (Connection conn = DriverManager.getConnection(DB_URL);
              Statement stmt = conn.createStatement()) {
