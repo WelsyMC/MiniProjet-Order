@@ -13,6 +13,10 @@ public class MainFrame extends JFrame {
     private JPanel navigationPanel;
     private JPanel contentPanel;
     private CardLayout cardLayout;
+    private DashboardPanel dashboardPanel;
+    private StocksPanel stocksPanel;
+    private CommandesPanel commandesPanel;
+    private ClientsPanel clientsPanel;
 
     public MainFrame(){
         this.initComponents();
@@ -55,11 +59,11 @@ public class MainFrame extends JFrame {
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
-        // Création des différents panneaux
-        StocksPanel stocksPanel = new StocksPanel();
-        CommandesPanel commandesPanel = new CommandesPanel();
-        ClientsPanel clientsPanel = new ClientsPanel();
-        DashboardPanel dashboardPanel = new DashboardPanel();
+        // Création des différents panneaux avec références de classe
+        stocksPanel = new StocksPanel();
+        commandesPanel = new CommandesPanel();
+        clientsPanel = new ClientsPanel();
+        dashboardPanel = new DashboardPanel();
 
         // Ajout des panneaux au CardLayout
         contentPanel.add(dashboardPanel, "Dashboard");
@@ -71,13 +75,25 @@ public class MainFrame extends JFrame {
         this.add(navigationPanel, BorderLayout.WEST);
         this.add(contentPanel, BorderLayout.CENTER);
 
-        // Configuration des actions des boutons
-        homeButton.addActionListener(e -> cardLayout.show(contentPanel, "Dashboard"));
-        stocksButton.addActionListener(e -> cardLayout.show(contentPanel, "Stocks"));
-        commandesButton.addActionListener(e -> cardLayout.show(contentPanel, "Commandes"));
-        clientsButton.addActionListener(e -> cardLayout.show(contentPanel, "Clients"));
+        // Configuration des actions des boutons avec mise à jour des données
+        homeButton.addActionListener(e -> {
+            dashboardPanel.updateDashboard();
+            cardLayout.show(contentPanel, "Dashboard");
+        });
+        stocksButton.addActionListener(e -> {
+            stocksPanel.refreshData();
+            cardLayout.show(contentPanel, "Stocks");
+        });
+        commandesButton.addActionListener(e -> {
+            commandesPanel.refreshData();
+            cardLayout.show(contentPanel, "Commandes");
+        });
+        clientsButton.addActionListener(e -> {
+            clientsPanel.refreshData();
+            cardLayout.show(contentPanel, "Clients");
+        });
 
-        // Afficher le panel Stocks par défaut
+        // Afficher le panel Dashboard par défaut
         cardLayout.show(contentPanel, "Dashboard");
     }
 

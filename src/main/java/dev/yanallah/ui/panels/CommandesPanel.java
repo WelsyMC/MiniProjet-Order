@@ -111,6 +111,9 @@ public class CommandesPanel extends JPanel {
         createOrderDialog.setSize(800, 600);
         createOrderDialog.setLocationRelativeTo(this);
 
+        // Réinitialiser la commande sélectionnée pour une nouvelle commande
+        selectedOrder = null;
+
         // Initialiser la liste des items de la commande en cours
         currentOrderItems = new ArrayList<>();
 
@@ -120,7 +123,10 @@ public class CommandesPanel extends JPanel {
 
         // Bouton pour fermer la fenêtre
         JButton closeButton = new JButton("Fermer");
-        closeButton.addActionListener(e -> createOrderDialog.dispose());
+        closeButton.addActionListener(e -> {
+            selectedOrder = null; // Réinitialiser la commande sélectionnée
+            createOrderDialog.dispose();
+        });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(closeButton);
@@ -144,7 +150,10 @@ public class CommandesPanel extends JPanel {
 
         // Bouton pour fermer la fenêtre
         JButton closeButton = new JButton("Fermer");
-        closeButton.addActionListener(e -> editOrderDialog.dispose());
+        closeButton.addActionListener(e -> {
+            selectedOrder = null; // Réinitialiser la commande sélectionnée
+            editOrderDialog.dispose();
+        });
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.add(closeButton);
@@ -194,8 +203,27 @@ public class CommandesPanel extends JPanel {
         }
 
         // ComboBox pour les items de stock
-        stockItemComboBox = new JComboBox<>(MiniProject.getInstance().getDatabase().getAllStockItems().toArray(new StockItem[0]));
+        List<StockItem> stockItems = new ArrayList<>();
+        stockItems.add(null); // Ajouter un choix vide
+        stockItems.addAll(MiniProject.getInstance().getDatabase().getAllStockItems());
+        stockItemComboBox = new JComboBox<>(stockItems.toArray(new StockItem[0]));
         stockItemComboBox.setPreferredSize(new Dimension(200, 30));
+        
+        // Renderer personnalisé pour afficher "-- Sélectionner un produit --" pour l'élément null
+        stockItemComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value == null) {
+                    setText("-- Sélectionner un produit --");
+                    setForeground(Color.GRAY);
+                } else {
+                    setText(value.toString());
+                    setForeground(Color.BLACK);
+                }
+                return this;
+            }
+        });
 
         // Spinner pour la quantité
         SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 1, 100, 1);
@@ -234,13 +262,19 @@ public class CommandesPanel extends JPanel {
                                 }   
                             }
 
-                            // Si la quantité dépasse le stock disponible, ajuster le spinner
+                            // Si la quantité dépasse le stock disponible, sélectionner le choix vide
                             if (selectedItem.getQuantityInStock() < totalQuantityRequested) {
-                                final int maxAvailable = Math.max(1, selectedItem.getQuantityInStock() - (totalQuantityRequested - quantity));
+                                final int maxAvailable = Math.max(0, selectedItem.getQuantityInStock() - (totalQuantityRequested - quantity));
+                                int finalTotalQuantityRequested = totalQuantityRequested;
                                 SwingUtilities.invokeLater(() -> {
-                                    quantitySpinner.setValue(maxAvailable);
+                                    // Sélectionner le choix vide pour éviter la boucle infinie
+                                    stockItemComboBox.setSelectedIndex(0);
+                                    quantitySpinner.setValue(1);
                                     JOptionPane.showMessageDialog(CommandesPanel.this,
-                                            "Stock insuffisant. Quantité maximale disponible : " + maxAvailable,
+                                            "Stock insuffisant pour " + selectedItem.getName() + ".\n" +
+                                            "Stock disponible : " + selectedItem.getQuantityInStock() + "\n" +
+                                            "Quantité déjà demandée : " + (finalTotalQuantityRequested - quantity) + "\n" +
+                                            "Veuillez sélectionner un autre produit ou ajuster la quantité.",
                                             "Attention",
                                             JOptionPane.WARNING_MESSAGE);
                                 });
@@ -408,6 +442,9 @@ public class CommandesPanel extends JPanel {
         // Fermer la fenêtre de dialogue
         editOrderDialog.dispose();
 
+        // Réinitialiser la commande sélectionnée
+        selectedOrder = null;
+
         // Rafraîchir la liste des commandes
         refreshData();
 
@@ -420,6 +457,16 @@ public class CommandesPanel extends JPanel {
     private void addItemToOrder() {
         Client selectedClient = (Client) clientComboBox.getSelectedItem();
         StockItem selectedItem = (StockItem) stockItemComboBox.getSelectedItem();
+        
+        // Vérifier qu'un produit est sélectionné
+        if (selectedItem == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Veuillez sélectionner un produit avant d'ajouter un item.",
+                    "Erreur",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
         int quantity = (Integer) quantitySpinner.getValue();
 
         // Vérifier la quantité totale demandée (incluant les items déjà ajoutés)
@@ -437,6 +484,8 @@ public class CommandesPanel extends JPanel {
                             "\nQuantité restante disponible : " + (selectedItem.getQuantityInStock() - (totalQuantityRequested - quantity)),
                     "Erreur",
                     JOptionPane.ERROR_MESSAGE);
+            // Sélectionner le choix vide après l'erreur
+            stockItemComboBox.setSelectedIndex(0);
             return;
         }
 
@@ -452,8 +501,11 @@ public class CommandesPanel extends JPanel {
                 String.format("%.2f €", orderItem.getTotalPrice())
         });
 
-        // Réinitialiser le spinner à 1
-        SwingUtilities.invokeLater(() -> quantitySpinner.setValue(1));
+        // Réinitialiser le formulaire
+        SwingUtilities.invokeLater(() -> {
+            stockItemComboBox.setSelectedIndex(0); // Remettre sur le choix vide
+            quantitySpinner.setValue(1);
+        });
     }
 
     private void createOrder() {
@@ -482,6 +534,9 @@ public class CommandesPanel extends JPanel {
 
         // Fermer la fenêtre de dialogue
         createOrderDialog.dispose();
+
+        // Réinitialiser la commande sélectionnée
+        selectedOrder = null;
 
         // Rafraîchir la liste des commandes
         refreshData();
