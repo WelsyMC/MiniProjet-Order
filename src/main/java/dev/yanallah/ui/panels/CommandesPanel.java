@@ -22,6 +22,7 @@ public class CommandesPanel extends JPanel {
     private JPanel formPanel;
     private JComboBox<Client> clientComboBox;
     private JComboBox<StockItem> stockItemComboBox;
+    private JComboBox<OrderStatus> statusComboBox;
     private JSpinner quantitySpinner;
     private List<OrderItem> currentOrderItems;
     private JTable orderItemsTable;
@@ -83,6 +84,36 @@ public class CommandesPanel extends JPanel {
             ordersTable.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
+        // Renderer spécial pour la colonne statut avec couleurs
+        DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(SwingConstants.CENTER);
+                
+                if (!isSelected && value != null) {
+                    String statusText = value.toString();
+                    // Déterminer la couleur basée sur le texte du statut
+                    if (statusText.equals("Créée")) {
+                        setForeground(new Color(23, 162, 184));
+                    } else if (statusText.equals("En préparation")) {
+                        setForeground(new Color(255, 193, 7));
+                    } else if (statusText.equals("Envoyée")) {
+                        setForeground(new Color(70, 130, 180));
+                    } else if (statusText.equals("Reçue")) {
+                        setForeground(new Color(40, 167, 69));
+                    } else if (statusText.equals("Annulée")) {
+                        setForeground(new Color(220, 53, 69));
+                    }
+                } else if (isSelected) {
+                    setForeground(table.getSelectionForeground());
+                }
+                
+                return this;
+            }
+        };
+        ordersTable.getColumnModel().getColumn(3).setCellRenderer(statusRenderer); // Colonne statut
+
         // Scroll pane pour la table des commandes
         scrollPane = new JScrollPane(ordersTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder(5, 20, 5, 20));
@@ -94,9 +125,27 @@ public class CommandesPanel extends JPanel {
         addOrderButton.setFocusPainted(false);
         addOrderButton.addActionListener(e -> showCreateOrderDialog());
 
-        // Panel pour le bouton
+        // Bouton pour voir les détails d'une commande
+        JButton viewOrderButton = new JButton("Voir détails");
+        viewOrderButton.setBackground(new Color(40, 167, 69));
+        viewOrderButton.setFocusPainted(false);
+        viewOrderButton.addActionListener(e -> {
+            int selectedRow = ordersTable.getSelectedRow();
+            if (selectedRow != -1) {
+                selectedOrder = orders.get(selectedRow);
+                showViewOrderDialog();
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Veuillez sélectionner une commande à visualiser.",
+                        "Aucune sélection",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        });
+
+        // Panel pour les boutons
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.add(viewOrderButton);
         buttonPanel.add(addOrderButton);
 
         // Ajout des composants au panel principal
@@ -165,6 +214,146 @@ public class CommandesPanel extends JPanel {
         editOrderDialog.setVisible(true);
     }
 
+    private void showViewOrderDialog() {
+        JDialog viewOrderDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Détails de la commande #" + selectedOrder.getId(), true);
+        viewOrderDialog.setLayout(new BorderLayout());
+        viewOrderDialog.setSize(800, 600);
+        viewOrderDialog.setLocationRelativeTo(this);
+
+        // Panel principal pour les détails
+        JPanel detailsPanel = new JPanel(new BorderLayout());
+        detailsPanel.setBackground(Color.WHITE);
+        detailsPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+
+        // Informations générales de la commande
+        JPanel infoPanel = createOrderInfoPanel();
+        detailsPanel.add(infoPanel, BorderLayout.NORTH);
+
+        // Table des items (en lecture seule)
+        String[] orderItemColumns = {"Produit", "Quantité", "Prix unitaire", "Total"};
+        DefaultTableModel viewTableModel = new DefaultTableModel(orderItemColumns, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Tout en lecture seule
+            }
+        };
+
+        JTable viewItemsTable = new JTable(viewTableModel);
+        viewItemsTable.setRowHeight(25);
+        viewItemsTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        viewItemsTable.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+
+        // Charger les items de la commande
+        for (OrderItem item : selectedOrder.getItems()) {
+            viewTableModel.addRow(new Object[]{
+                    item.getStockItem().getName(),
+                    item.getQuantity(),
+                    String.format("%.2f €", item.getUnitPrice()),
+                    String.format("%.2f €", item.getTotalPrice())
+            });
+        }
+
+        JScrollPane viewScrollPane = new JScrollPane(viewItemsTable);
+        detailsPanel.add(viewScrollPane, BorderLayout.CENTER);
+
+        // Panel pour le total
+        JPanel totalPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        totalPanel.setBackground(Color.WHITE);
+        JLabel totalLabel = new JLabel("Total de la commande : " + String.format("%.2f €", selectedOrder.getTotalAmount()));
+        totalLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        totalLabel.setForeground(new Color(70, 130, 180));
+        totalPanel.add(totalLabel);
+        detailsPanel.add(totalPanel, BorderLayout.SOUTH);
+
+        viewOrderDialog.add(detailsPanel, BorderLayout.CENTER);
+
+        // Boutons d'action
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton editButton = new JButton("Modifier");
+        editButton.setBackground(new Color(255, 193, 7));
+        editButton.addActionListener(e -> {
+            viewOrderDialog.dispose();
+            showEditOrderDialog();
+        });
+
+        JButton closeButton = new JButton("Fermer");
+        closeButton.addActionListener(e -> {
+            selectedOrder = null;
+            viewOrderDialog.dispose();
+        });
+
+        buttonPanel.add(editButton);
+        buttonPanel.add(closeButton);
+        viewOrderDialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        viewOrderDialog.setVisible(true);
+    }
+
+    private JPanel createOrderInfoPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createTitledBorder("Informations de la commande"));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        // ID de la commande
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("ID :"), gbc);
+        gbc.gridx = 1;
+        JLabel idLabel = new JLabel(String.valueOf(selectedOrder.getId()));
+        idLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        panel.add(idLabel, gbc);
+
+        // Client
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Client :"), gbc);
+        gbc.gridx = 1;
+        String clientName = selectedOrder.getClient() != null 
+            ? selectedOrder.getClient().getNom() + " " + selectedOrder.getClient().getPrenom()
+            : "Client #" + selectedOrder.getClientId();
+        JLabel clientLabel = new JLabel(clientName);
+        clientLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        panel.add(clientLabel, gbc);
+
+        // Date
+        gbc.gridx = 0; gbc.gridy = 2;
+        panel.add(new JLabel("Date :"), gbc);
+        gbc.gridx = 1;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+        JLabel dateLabel = new JLabel(selectedOrder.getOrderDate().format(formatter));
+        dateLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        panel.add(dateLabel, gbc);
+
+        // Statut avec couleur
+        gbc.gridx = 0; gbc.gridy = 3;
+        panel.add(new JLabel("Statut :"), gbc);
+        gbc.gridx = 1;
+        JLabel statusLabel = new JLabel(selectedOrder.getStatus().getDisplayName());
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        statusLabel.setForeground(getStatusColor(selectedOrder.getStatus()));
+        panel.add(statusLabel, gbc);
+
+        return panel;
+    }
+
+    private Color getStatusColor(OrderStatus status) {
+        switch (status) {
+            case CREATED:
+                return new Color(23, 162, 184); // INFO_COLOR
+            case PREPARING:
+                return new Color(255, 193, 7); // WARNING_COLOR
+            case SENT:
+                return new Color(70, 130, 180); // PRIMARY_COLOR
+            case RECEIVED:
+                return new Color(40, 167, 69); // SUCCESS_COLOR
+            case CANCELLED:
+                return new Color(220, 53, 69); // DANGER_COLOR
+            default:
+                return new Color(23, 162, 184);
+        }
+    }
+
     private void loadOrderItems() {
         orderItemsTableModel.setRowCount(0);
         for (OrderItem item : currentOrderItems) {
@@ -200,6 +389,27 @@ public class CommandesPanel extends JPanel {
                     break;
                 }
             }
+        }
+
+        // ComboBox pour le statut (seulement en mode édition)
+        statusComboBox = new JComboBox<>(OrderStatus.values());
+        statusComboBox.setPreferredSize(new Dimension(200, 30));
+        statusComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof OrderStatus) {
+                    setText(((OrderStatus) value).getDisplayName());
+                }
+                return this;
+            }
+        });
+        
+        // Pré-sélectionner le statut si on édite une commande
+        if (selectedOrder != null) {
+            statusComboBox.setSelectedItem(selectedOrder.getStatus());
+        } else {
+            statusComboBox.setSelectedItem(OrderStatus.CREATED); // Statut par défaut pour nouvelle commande
         }
 
         // ComboBox pour les items de stock
@@ -300,20 +510,32 @@ public class CommandesPanel extends JPanel {
         gbc.gridx = 1;
         selectionPanel.add(clientComboBox, gbc);
 
+        // Ajouter le statut seulement si on édite une commande ou si on veut le montrer en création
         gbc.gridx = 0;
         gbc.gridy = 1;
+        selectionPanel.add(new JLabel("Statut:"), gbc);
+        gbc.gridx = 1;
+        selectionPanel.add(statusComboBox, gbc);
+        
+        // Désactiver la ComboBox du statut en mode création
+        if (selectedOrder == null) {
+            statusComboBox.setEnabled(false);
+        }
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         selectionPanel.add(new JLabel("Produit:"), gbc);
         gbc.gridx = 1;
         selectionPanel.add(stockItemComboBox, gbc);
 
         gbc.gridx = 0;
-        gbc.gridy = 2;
+        gbc.gridy = 3;
         selectionPanel.add(new JLabel("Quantité:"), gbc);
         gbc.gridx = 1;
         selectionPanel.add(quantitySpinner, gbc);
 
         gbc.gridx = 1;
-        gbc.gridy = 3;
+        gbc.gridy = 4;
         gbc.anchor = GridBagConstraints.EAST;
         selectionPanel.add(addItemButton, gbc);
 
@@ -432,7 +654,10 @@ public class CommandesPanel extends JPanel {
         }
 
         Client selectedClient = (Client) clientComboBox.getSelectedItem();
+        OrderStatus selectedStatus = (OrderStatus) statusComboBox.getSelectedItem();
+        
         selectedOrder.setClientId(selectedClient.getId());
+        selectedOrder.setStatus(selectedStatus); // Mettre à jour le statut
         selectedOrder.getItems().clear();
         selectedOrder.getItems().addAll(currentOrderItems);
 
@@ -518,7 +743,8 @@ public class CommandesPanel extends JPanel {
         }
 
         Client selectedClient = (Client) clientComboBox.getSelectedItem();
-        Order newOrder = new Order(0, selectedClient.getId(), LocalDateTime.now(), OrderStatus.CREATED);
+        OrderStatus selectedStatus = (OrderStatus) statusComboBox.getSelectedItem();
+        Order newOrder = new Order(0, selectedClient.getId(), LocalDateTime.now(), selectedStatus);
 
         // Ajouter tous les items à la commande
         for (OrderItem item : currentOrderItems) {
