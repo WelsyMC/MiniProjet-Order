@@ -280,7 +280,18 @@ public class CommandesPanel extends JPanel {
             bonCommandeButton.setBackground(new Color(23, 162, 184)); // Bleu info
             bonCommandeButton.setFocusPainted(false);
             bonCommandeButton.addActionListener(e -> {
-                BonGenerator.generateCommande(selectedOrder.getClient(), selectedOrder);
+                try {
+                    BonGenerator.generateCommande(selectedOrder.getClient(), selectedOrder);
+                    JOptionPane.showMessageDialog(this,
+                        "Bon de commande généré avec succès !",
+                        "Génération réussie",
+                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this,
+                        "Erreur lors de la génération du bon de commande :\n" + ex.getMessage(),
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+                }
             });
             buttonPanel.add(bonCommandeButton);
         }
@@ -291,7 +302,18 @@ public class CommandesPanel extends JPanel {
             bonLivraisonButton.setBackground(new Color(70, 130, 180)); // Bleu primary
             bonLivraisonButton.setFocusPainted(false);
             bonLivraisonButton.addActionListener(e -> {
-                BonGenerator.generateLivraison(selectedOrder.getClient(), selectedOrder);
+                try {
+                    BonGenerator.generateLivraison(selectedOrder.getClient(), selectedOrder);
+                    JOptionPane.showMessageDialog(this,
+                        "Bon de livraison généré avec succès !",
+                        "Génération réussie",
+                        JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this,
+                        "Erreur lors de la génération du bon de livraison :\n" + ex.getMessage(),
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+                }
             });
             buttonPanel.add(bonLivraisonButton);
         }

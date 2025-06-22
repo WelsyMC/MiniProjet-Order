@@ -2,8 +2,12 @@ plugins {
     id 'java'
 }
 
+
 group = 'dev.yanallah'
 version = '1.0-SNAPSHOT'
+
+def LIB_ITEXT_VERSION = "9.2.0"
+
 
 repositories {
     mavenCentral()
@@ -11,6 +15,8 @@ repositories {
 
 dependencies {
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.8.11.2'
+    implementation("com.itextpdf:itext-core:${LIB_ITEXT_VERSION}")
+    implementation("com.itextpdf:bouncy-castle-adapter:${LIB_ITEXT_VERSION}")
 }
 
 test {
