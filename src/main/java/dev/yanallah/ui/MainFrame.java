@@ -62,23 +62,23 @@ public class MainFrame extends JFrame {
         DashboardPanel dashboardPanel = new DashboardPanel();
 
         // Ajout des panneaux au CardLayout
+        contentPanel.add(dashboardPanel, "Dashboard");
         contentPanel.add(stocksPanel, "Stocks");
         contentPanel.add(commandesPanel, "Commandes");
         contentPanel.add(clientsPanel, "Clients");
-        contentPanel.add(dashboardPanel, "Dashboard");
 
         // Ajout des panels à la frame
         this.add(navigationPanel, BorderLayout.WEST);
         this.add(contentPanel, BorderLayout.CENTER);
 
         // Configuration des actions des boutons
+        homeButton.addActionListener(e -> cardLayout.show(contentPanel, "Dashboard"));
         stocksButton.addActionListener(e -> cardLayout.show(contentPanel, "Stocks"));
         commandesButton.addActionListener(e -> cardLayout.show(contentPanel, "Commandes"));
         clientsButton.addActionListener(e -> cardLayout.show(contentPanel, "Clients"));
-        homeButton.addActionListener(e -> cardLayout.show(contentPanel, "Dashboard"));
 
         // Afficher le panel Stocks par défaut
-        cardLayout.show(contentPanel, "Home");
+        cardLayout.show(contentPanel, "Dashboard");
     }
 
     private JButton createNavButton(String text) {
