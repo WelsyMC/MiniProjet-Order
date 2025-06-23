@@ -436,6 +436,7 @@ public class Database {
             pstmt.executeUpdate();
         }
     }
+
     private void initializeDemoData() {
         // Vérifier si des données existent déjà
         if (getAllClients().isEmpty()) {
@@ -454,6 +455,20 @@ public class Database {
             addStockItem(new StockItem(0, "Clavier mécanique", 30, 79.99));
             addStockItem(new StockItem(0, "Écran 24 pouces", 15, 199.99));
             addStockItem(new StockItem(0, "Casque audio", 25, 149.99));
+        }
+    }
+
+    public void updateStock(StockItem item, int newQuantity) {
+        String sql = "UPDATE stock_items SET quantity_in_stock = ? WHERE id = ?";
+
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, newQuantity);
+            pstmt.setInt(2, item.getId());
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 }

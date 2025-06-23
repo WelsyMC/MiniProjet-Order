@@ -41,7 +41,36 @@ public class StocksPanel extends JPanel {
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Table non éditable
+                // Seule la colonne quantité (index 1) est éditable
+                return column == 1;
+            }
+
+            @Override
+            public void setValueAt(Object value, int row, int col) {
+                if (col == 1) { // Colonne quantité
+                    try {
+                        int newQuantity = Integer.parseInt(value.toString());
+                        if (newQuantity >= 0) {
+                            StockItem item = stocks.get(row);
+                            onQuantityChanged(item, newQuantity);
+                            super.setValueAt(newQuantity, row, col);
+                            // Mettre à jour le total après modification
+                            updateTotalItems();
+                        } else {
+                            JOptionPane.showMessageDialog(StocksPanel.this,
+                                    "La quantité doit être un nombre positif ou zéro.",
+                                    "Erreur de saisie",
+                                    JOptionPane.WARNING_MESSAGE);
+                        }
+                    } catch (NumberFormatException e) {
+                        JOptionPane.showMessageDialog(StocksPanel.this,
+                                "Veuillez saisir un nombre valide.",
+                                "Erreur de saisie",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    super.setValueAt(value, row, col);
+                }
             }
         };
 
@@ -117,8 +146,30 @@ public class StocksPanel extends JPanel {
         }
 
         // Mettre à jour les informations
+        updateTotalItems();
+    }
+
+    private void updateTotalItems() {
         final int totalItems = stocks.stream().reduce(0, (sub, el) -> sub + el.getQuantityInStock(), Integer::sum);
         totalItemsLabel.setText("Total des articles dans le stock: " + totalItems);
+    }
+
+    /**
+     * Méthode appelée lorsque la quantité d'un article est modifiée
+     * @param item L'article dont la quantité a été modifiée
+     * @param newQuantity La nouvelle quantité
+     */
+    protected void onQuantityChanged(StockItem item, int newQuantity) {
+        // Mettre à jour la quantité dans l'objet
+        item.setQuantityInStock(newQuantity);
+
+        // Ici vous pouvez ajouter la logique pour sauvegarder en base de données
+        // Par exemple:
+        // MiniProject.getInstance().getDatabase().updateStockItem(item);
+
+        System.out.println("Quantité modifiée pour " + item.getName() + ": " + newQuantity);
+
+        MiniProject.getInstance().getDatabase().updateStock(item, newQuantity);
     }
 
     // Méthode pour rafraîchir les données
