@@ -285,9 +285,9 @@ public class CommandesPanel extends JPanel {
                 try {
                     BonGenerator.generateCommande(selectedOrder.getClient(), selectedOrder);
                     viewOrderDialog.setVisible(false);
-                    Toast.INSTANCE.success(this, "Bon de commande", "Bon de commande généré avec succès !");
+                    Toast.INSTANCE.success(this,  "Bon de commande généré avec succès !", "Bon de commande");
                 } catch (Exception ex) {
-                    Toast.INSTANCE.error(this, "Erreur - Bon de commande", "Erreur lors de la génération du bon de commande :\n" + ex.getMessage());
+                    Toast.INSTANCE.error(this, "Erreur lors de la génération du bon de commande :\n" + ex.getMessage(), "Erreur - Bon de commande");
                 }
             });
             buttonPanel.add(bonCommandeButton);
@@ -302,9 +302,9 @@ public class CommandesPanel extends JPanel {
                 try {
                     BonGenerator.generateLivraison(selectedOrder.getClient(), selectedOrder);
                     viewOrderDialog.setVisible(false);
-                    Toast.INSTANCE.success(this, "Bon de livraison", "Bon de livraison généré avec succès !");
+                    Toast.INSTANCE.success(this, "Bon de livraison généré avec succès !", "Bon de livraison");
                 } catch (Exception ex) {
-                    Toast.INSTANCE.error(this, "Erreur - Bon de livraison", "Erreur lors de la génération du bon de livraison :\n" + ex.getMessage());
+                    Toast.INSTANCE.error(this, "Erreur lors de la génération du bon de livraison :\n" + ex.getMessage(), "Erreur - Bon de livraison");
                 }
             });
             buttonPanel.add(bonLivraisonButton);

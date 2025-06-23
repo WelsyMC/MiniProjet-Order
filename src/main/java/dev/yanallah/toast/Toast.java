@@ -14,7 +14,7 @@ public enum Toast {
     static final int LEVEL_ERROR = 3;
     private final List<ToastObj> toasts = new ArrayList<>();
 
-    public void info(Component view, String title, String message) {
+    public void info(Component view, String message, String title) {
         final ToastObj toastObj = new ToastObj(
                 System.currentTimeMillis(),
                 5000L,
@@ -43,7 +43,7 @@ public enum Toast {
         }};
     }
 
-    public void success(Component view, String title, String message) {
+    public void success(Component view, String message, String title) {
         final ToastObj toastObj = new ToastObj(
                 System.currentTimeMillis(),
                 5000L,
@@ -72,7 +72,7 @@ public enum Toast {
         }};
     }
 
-    public void warn(Component view, String title, String message) {
+    public void warn(Component view, String message, String title) {
         final ToastObj toastObj = new ToastObj(
                 System.currentTimeMillis(),
                 5000L,
@@ -101,7 +101,7 @@ public enum Toast {
         }};
     }
 
-    public void error(Component view, String title, String message) {
+    public void error(Component view, String message, String title) {
         final ToastObj toastObj = new ToastObj(
                 System.currentTimeMillis(),
                 5000L,

@@ -159,6 +159,9 @@ public class ClientsPanel extends JPanel {
         );
 
         MiniProject.getInstance().getDatabase().addClient(newClient);
+        Toast.INSTANCE.success(this,
+                "Le client a été créé avec succès !",
+                "Succès - Création de client");
         refreshData();
 
         // Réinitialiser les champs
@@ -167,6 +170,8 @@ public class ClientsPanel extends JPanel {
         emailField.setText("");
         telephoneField.setText("");
         adresseField.setText("");
+
+
     }
 
     private void loadClientData() {
