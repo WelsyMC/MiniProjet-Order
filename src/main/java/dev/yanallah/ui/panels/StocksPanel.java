@@ -2,6 +2,7 @@ package dev.yanallah.ui.panels;
 
 import dev.yanallah.MiniProject;
 import dev.yanallah.models.StockItem;
+import dev.yanallah.toast.Toast;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -160,16 +161,20 @@ public class StocksPanel extends JPanel {
      * @param newQuantity La nouvelle quantité
      */
     protected void onQuantityChanged(StockItem item, int newQuantity) {
-        // Mettre à jour la quantité dans l'objet
+        if(item.getQuantityInStock() == newQuantity)return;
+
         item.setQuantityInStock(newQuantity);
 
-        // Ici vous pouvez ajouter la logique pour sauvegarder en base de données
-        // Par exemple:
-        // MiniProject.getInstance().getDatabase().updateStockItem(item);
-
-        System.out.println("Quantité modifiée pour " + item.getName() + ": " + newQuantity);
-
         MiniProject.getInstance().getDatabase().updateStock(item, newQuantity);
+        Toast.INSTANCE.success(
+                this,
+                "Quantité modifiée !",
+                    String.format(
+                            "La quantité pour l'article \"%s\" a été modifiée avec succès ! Nouvelle quantité: %d",
+                            item.getName(),
+                            newQuantity
+                    )
+                );
     }
 
     // Méthode pour rafraîchir les données
