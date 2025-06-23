@@ -137,10 +137,11 @@ public class CommandesPanel extends JPanel {
                 selectedOrder = orders.get(selectedRow);
                 showViewOrderDialog();
             } else {
-                JOptionPane.showMessageDialog(this,
+                Toast.INSTANCE.warn(
+                        this,
                         "Veuillez sélectionner une commande à visualiser.",
-                        "Aucune sélection",
-                        JOptionPane.WARNING_MESSAGE);
+                        "Aucune sélection"
+                );
             }
         });
 
@@ -693,10 +694,9 @@ public class CommandesPanel extends JPanel {
 
     private void updateOrder() {
         if (currentOrderItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
+            Toast.INSTANCE.warn(this,
                     "Veuillez ajouter au moins un item à la commande",
-                    "Erreur",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Erreur");
             return;
         }
 
@@ -720,10 +720,10 @@ public class CommandesPanel extends JPanel {
         // Rafraîchir la liste des commandes
         refreshData();
 
-        JOptionPane.showMessageDialog(this,
+        Toast.INSTANCE.success(this,
                 "Commande mise à jour avec succès",
-                "Succès",
-                JOptionPane.INFORMATION_MESSAGE);
+                "Succès");
+
     }
 
     private void addItemToOrder() {
@@ -732,10 +732,9 @@ public class CommandesPanel extends JPanel {
 
         // Vérifier qu'un produit est sélectionné
         if (selectedItem == null) {
-            JOptionPane.showMessageDialog(this,
+            Toast.INSTANCE.error(this,
                     "Veuillez sélectionner un produit avant d'ajouter un item.",
-                    "Erreur",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Erreur");
             return;
         }
 
@@ -783,10 +782,9 @@ public class CommandesPanel extends JPanel {
 
     private void createOrder() {
         if (currentOrderItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
+            Toast.INSTANCE.error(this,
                     "Veuillez ajouter au moins un item à la commande",
-                    "Erreur",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Erreur");
             return;
         }
 
@@ -815,10 +813,9 @@ public class CommandesPanel extends JPanel {
         // Rafraîchir la liste des commandes
         refreshData();
 
-        JOptionPane.showMessageDialog(this,
+        Toast.INSTANCE.success(this,
                 "Commande créée avec succès",
-                "Succès",
-                JOptionPane.INFORMATION_MESSAGE);
+                "Succès");
     }
 
     private void loadOrderData() {
