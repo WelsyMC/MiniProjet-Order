@@ -27,7 +27,7 @@ public class MainFrame extends JFrame {
 
     private void initComponents(){
         this.setTitle(References.FRAME_TITLE);
-        this.setResizable(false);
+        this.setResizable(true);
         this.setSize(References.FRAME_WIDTH, References.FRAME_HEIGHT);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setLocationRelativeTo(null);
