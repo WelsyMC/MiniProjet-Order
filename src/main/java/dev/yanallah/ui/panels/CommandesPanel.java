@@ -2,6 +2,7 @@ package dev.yanallah.ui.panels;
 
 import dev.yanallah.MiniProject;
 import dev.yanallah.models.*;
+import dev.yanallah.toast.Toast;
 import dev.yanallah.utils.BonGenerator;
 
 import javax.swing.*;
@@ -91,7 +92,7 @@ public class CommandesPanel extends JPanel {
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(SwingConstants.CENTER);
-                
+
                 if (!isSelected && value != null) {
                     String statusText = value.toString();
                     // Déterminer la couleur basée sur le texte du statut
@@ -109,7 +110,7 @@ public class CommandesPanel extends JPanel {
                 } else if (isSelected) {
                     setForeground(table.getSelectionForeground());
                 }
-                
+
                 return this;
             }
         };
@@ -270,10 +271,10 @@ public class CommandesPanel extends JPanel {
 
         // Boutons d'action
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        
+
         // Boutons conditionnels selon le statut
         OrderStatus status = selectedOrder.getStatus();
-        
+
         // Bouton "Bon de commande" pour les statuts "En préparation" et "Envoyée"
         if (status == OrderStatus.PREPARING || status == OrderStatus.SENT) {
             JButton bonCommandeButton = new JButton("Générer bon de commande");
@@ -282,20 +283,15 @@ public class CommandesPanel extends JPanel {
             bonCommandeButton.addActionListener(e -> {
                 try {
                     BonGenerator.generateCommande(selectedOrder.getClient(), selectedOrder);
-                    JOptionPane.showMessageDialog(this,
-                        "Bon de commande généré avec succès !",
-                        "Génération réussie",
-                        JOptionPane.INFORMATION_MESSAGE);
+                    viewOrderDialog.setVisible(false);
+                    Toast.INSTANCE.success(this, "Bon de commande", "Bon de commande généré avec succès !");
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this,
-                        "Erreur lors de la génération du bon de commande :\n" + ex.getMessage(),
-                        "Erreur",
-                        JOptionPane.ERROR_MESSAGE);
+                    Toast.INSTANCE.error(this, "Erreur - Bon de commande", "Erreur lors de la génération du bon de commande :\n" + ex.getMessage());
                 }
             });
             buttonPanel.add(bonCommandeButton);
         }
-        
+
         // Bouton "Bon de livraison" uniquement pour le statut "Envoyée"
         if (status == OrderStatus.SENT) {
             JButton bonLivraisonButton = new JButton("Générer bon de livraison");
@@ -304,20 +300,15 @@ public class CommandesPanel extends JPanel {
             bonLivraisonButton.addActionListener(e -> {
                 try {
                     BonGenerator.generateLivraison(selectedOrder.getClient(), selectedOrder);
-                    JOptionPane.showMessageDialog(this,
-                        "Bon de livraison généré avec succès !",
-                        "Génération réussie",
-                        JOptionPane.INFORMATION_MESSAGE);
+                    viewOrderDialog.setVisible(false);
+                    Toast.INSTANCE.success(this, "Bon de livraison", "Bon de livraison généré avec succès !");
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(this,
-                        "Erreur lors de la génération du bon de livraison :\n" + ex.getMessage(),
-                        "Erreur",
-                        JOptionPane.ERROR_MESSAGE);
+                    Toast.INSTANCE.error(this, "Erreur - Bon de livraison", "Erreur lors de la génération du bon de livraison :\n" + ex.getMessage());
                 }
             });
             buttonPanel.add(bonLivraisonButton);
         }
-        
+
         // Bouton "Modifier" (toujours présent)
         JButton editButton = new JButton("Modifier");
         editButton.setBackground(new Color(255, 193, 7));
@@ -349,7 +340,8 @@ public class CommandesPanel extends JPanel {
         gbc.insets = new Insets(5, 5, 5, 5);
 
         // ID de la commande
-        gbc.gridx = 0; gbc.gridy = 0;
+        gbc.gridx = 0;
+        gbc.gridy = 0;
         panel.add(new JLabel("ID :"), gbc);
         gbc.gridx = 1;
         JLabel idLabel = new JLabel(String.valueOf(selectedOrder.getId()));
@@ -357,18 +349,20 @@ public class CommandesPanel extends JPanel {
         panel.add(idLabel, gbc);
 
         // Client
-        gbc.gridx = 0; gbc.gridy = 1;
+        gbc.gridx = 0;
+        gbc.gridy = 1;
         panel.add(new JLabel("Client :"), gbc);
         gbc.gridx = 1;
-        String clientName = selectedOrder.getClient() != null 
-            ? selectedOrder.getClient().getNom() + " " + selectedOrder.getClient().getPrenom()
-            : "Client #" + selectedOrder.getClientId();
+        String clientName = selectedOrder.getClient() != null
+                ? selectedOrder.getClient().getNom() + " " + selectedOrder.getClient().getPrenom()
+                : "Client #" + selectedOrder.getClientId();
         JLabel clientLabel = new JLabel(clientName);
         clientLabel.setFont(new Font("Arial", Font.BOLD, 14));
         panel.add(clientLabel, gbc);
 
         // Date
-        gbc.gridx = 0; gbc.gridy = 2;
+        gbc.gridx = 0;
+        gbc.gridy = 2;
         panel.add(new JLabel("Date :"), gbc);
         gbc.gridx = 1;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -377,7 +371,8 @@ public class CommandesPanel extends JPanel {
         panel.add(dateLabel, gbc);
 
         // Statut avec couleur
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0;
+        gbc.gridy = 3;
         panel.add(new JLabel("Statut :"), gbc);
         gbc.gridx = 1;
         JLabel statusLabel = new JLabel(selectedOrder.getStatus().getDisplayName());
@@ -455,7 +450,7 @@ public class CommandesPanel extends JPanel {
                 return this;
             }
         });
-        
+
         // Pré-sélectionner le statut si on édite une commande
         if (selectedOrder != null) {
             statusComboBox.setSelectedItem(selectedOrder.getStatus());
@@ -469,7 +464,7 @@ public class CommandesPanel extends JPanel {
         stockItems.addAll(MiniProject.getInstance().getDatabase().getAllStockItems());
         stockItemComboBox = new JComboBox<>(stockItems.toArray(new StockItem[0]));
         stockItemComboBox.setPreferredSize(new Dimension(200, 30));
-        
+
         // Renderer personnalisé pour afficher "-- Sélectionner un produit --" pour l'élément null
         stockItemComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
@@ -520,7 +515,7 @@ public class CommandesPanel extends JPanel {
                             for (OrderItem existingItem : currentOrderItems) {
                                 if (existingItem.getStockItemId() == selectedItem.getId()) {
                                     totalQuantityRequested += existingItem.getQuantity();
-                                }   
+                                }
                             }
 
                             // Si la quantité dépasse le stock disponible, sélectionner le choix vide
@@ -531,13 +526,14 @@ public class CommandesPanel extends JPanel {
                                     // Sélectionner le choix vide pour éviter la boucle infinie
                                     stockItemComboBox.setSelectedIndex(0);
                                     quantitySpinner.setValue(1);
-                                    JOptionPane.showMessageDialog(CommandesPanel.this,
-                                            "Stock insuffisant pour " + selectedItem.getName() + ".\n" +
-                                            "Stock disponible : " + selectedItem.getQuantityInStock() + "\n" +
-                                            "Quantité déjà demandée : " + (finalTotalQuantityRequested - quantity) + "\n" +
-                                            "Veuillez sélectionner un autre produit ou ajuster la quantité.",
+                                    Toast.INSTANCE.warn(
+                                            CommandesPanel.this,
                                             "Attention",
-                                            JOptionPane.WARNING_MESSAGE);
+                                            "Stock insuffisant pour " + selectedItem.getName() + ".\n" +
+                                                    "Stock disponible : " + selectedItem.getQuantityInStock() + "\n" +
+                                                    "Quantité déjà demandée : " + (finalTotalQuantityRequested - quantity) + "\n" +
+                                                    "Veuillez sélectionner un autre produit ou ajuster la quantité."
+                                    );
                                 });
                             }
                         }
@@ -567,7 +563,7 @@ public class CommandesPanel extends JPanel {
         selectionPanel.add(new JLabel("Statut:"), gbc);
         gbc.gridx = 1;
         selectionPanel.add(statusComboBox, gbc);
-        
+
         // Désactiver la ComboBox du statut en mode création
         if (selectedOrder == null) {
             statusComboBox.setEnabled(false);
@@ -706,7 +702,7 @@ public class CommandesPanel extends JPanel {
 
         Client selectedClient = (Client) clientComboBox.getSelectedItem();
         OrderStatus selectedStatus = (OrderStatus) statusComboBox.getSelectedItem();
-        
+
         selectedOrder.setClientId(selectedClient.getId());
         selectedOrder.setStatus(selectedStatus); // Mettre à jour le statut
         selectedOrder.getItems().clear();
@@ -733,7 +729,7 @@ public class CommandesPanel extends JPanel {
     private void addItemToOrder() {
         Client selectedClient = (Client) clientComboBox.getSelectedItem();
         StockItem selectedItem = (StockItem) stockItemComboBox.getSelectedItem();
-        
+
         // Vérifier qu'un produit est sélectionné
         if (selectedItem == null) {
             JOptionPane.showMessageDialog(this,
@@ -742,7 +738,7 @@ public class CommandesPanel extends JPanel {
                     JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         int quantity = (Integer) quantitySpinner.getValue();
 
         // Vérifier la quantité totale demandée (incluant les items déjà ajoutés)
@@ -754,12 +750,13 @@ public class CommandesPanel extends JPanel {
         }
 
         if (selectedItem.getQuantityInStock() < totalQuantityRequested) {
-            JOptionPane.showMessageDialog(this,
+            Toast.INSTANCE.warn(
+                    this,
                     "Quantité insuffisante en stock. Stock disponible : " + selectedItem.getQuantityInStock() +
                             "\nQuantité déjà demandée : " + (totalQuantityRequested - quantity) +
                             "\nQuantité restante disponible : " + (selectedItem.getQuantityInStock() - (totalQuantityRequested - quantity)),
-                    "Erreur",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Erreur"
+            );
             // Sélectionner le choix vide après l'erreur
             stockItemComboBox.setSelectedIndex(0);
             return;
