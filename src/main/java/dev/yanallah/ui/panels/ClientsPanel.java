@@ -2,6 +2,7 @@ package dev.yanallah.ui.panels;
 
 import dev.yanallah.MiniProject;
 import dev.yanallah.models.Client;
+import dev.yanallah.toast.Toast;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -141,10 +142,9 @@ public class ClientsPanel extends JPanel {
         String adresse = adresseField.getText().trim();
 
         if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() || telephone.isEmpty() || adresse.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
+            Toast.INSTANCE.error(this,
                     "Veuillez remplir tous les champs",
-                    "Erreur",
-                    JOptionPane.ERROR_MESSAGE);
+                    "Erreur");
             return;
         }
 

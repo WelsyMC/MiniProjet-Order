@@ -58,16 +58,15 @@ public class StocksPanel extends JPanel {
                             // Mettre à jour le total après modification
                             updateTotalItems();
                         } else {
-                            JOptionPane.showMessageDialog(StocksPanel.this,
+                            Toast.INSTANCE.error(StocksPanel.this,
                                     "La quantité doit être un nombre positif ou zéro.",
-                                    "Erreur de saisie",
-                                    JOptionPane.WARNING_MESSAGE);
+                                    "Erreur de saisie");
+
                         }
                     } catch (NumberFormatException e) {
-                        JOptionPane.showMessageDialog(StocksPanel.this,
+                        Toast.INSTANCE.error(StocksPanel.this,
                                 "Veuillez saisir un nombre valide.",
-                                "Erreur de saisie",
-                                JOptionPane.ERROR_MESSAGE);
+                                "Erreur de saisie");
                     }
                 } else {
                     super.setValueAt(value, row, col);
