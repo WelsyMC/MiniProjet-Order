@@ -93,22 +93,33 @@ public class CommandesPanel extends JPanel {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setHorizontalAlignment(SwingConstants.CENTER);
 
-                if (!isSelected && value != null) {
-                    String statusText = value.toString();
-                    // Déterminer la couleur basée sur le texte du statut
-                    if (statusText.equals("Créée")) {
-                        setForeground(new Color(23, 162, 184));
-                    } else if (statusText.equals("En préparation")) {
-                        setForeground(new Color(255, 193, 7));
-                    } else if (statusText.equals("Envoyée")) {
-                        setForeground(new Color(70, 130, 180));
-                    } else if (statusText.equals("Reçue")) {
-                        setForeground(new Color(40, 167, 69));
-                    } else if (statusText.equals("Annulée")) {
-                        setForeground(new Color(220, 53, 69));
-                    }
-                } else if (isSelected) {
+                if (isSelected) {
+                    // Quand la ligne est sélectionnée, utiliser les couleurs de sélection par défaut
                     setForeground(table.getSelectionForeground());
+                    setBackground(table.getSelectionBackground());
+                } else {
+                    // Couleur de fond normale
+                    setBackground(table.getBackground());
+
+                    // Déterminer la couleur du texte basée sur le statut
+                    if (value != null) {
+                        String statusText = value.toString();
+                        if (statusText.equals("Créée")) {
+                            setForeground(new Color(23, 162, 184));
+                        } else if (statusText.equals("En préparation")) {
+                            setForeground(new Color(255, 193, 7));
+                        } else if (statusText.equals("Envoyée")) {
+                            setForeground(new Color(70, 130, 180));
+                        } else if (statusText.equals("Reçue")) {
+                            setForeground(new Color(40, 167, 69));
+                        } else if (statusText.equals("Annulée")) {
+                            setForeground(new Color(220, 53, 69));
+                        } else {
+                            setForeground(table.getForeground());
+                        }
+                    } else {
+                        setForeground(table.getForeground());
+                    }
                 }
 
                 return this;
