@@ -739,20 +739,13 @@ public class CommandesPanel extends JPanel {
         OrderStatus selectedStatus = (OrderStatus) statusComboBox.getSelectedItem();
 
         selectedOrder.setClientId(selectedClient.getId());
-        selectedOrder.setStatus(selectedStatus); // Mettre à jour le statut
+        selectedOrder.setStatus(selectedStatus);
         selectedOrder.getItems().clear();
         selectedOrder.getItems().addAll(currentOrderItems);
 
-        // Mettre à jour la commande dans la base de données (le stock est géré dans Database)
         MiniProject.getInstance().getDatabase().updateOrder(selectedOrder);
-
-        // Fermer la fenêtre de dialogue
         editOrderDialog.dispose();
-
-        // Réinitialiser la commande sélectionnée
         selectedOrder = null;
-
-        // Rafraîchir la liste des commandes
         refreshData();
 
         Toast.INSTANCE.success(this,
