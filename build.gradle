@@ -17,6 +17,9 @@ dependencies {
     implementation group: 'org.xerial', name: 'sqlite-jdbc', version: '3.8.11.2'
     implementation("com.itextpdf:itext-core:${LIB_ITEXT_VERSION}")
     implementation("com.itextpdf:bouncy-castle-adapter:${LIB_ITEXT_VERSION}")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
 }
 
 test {

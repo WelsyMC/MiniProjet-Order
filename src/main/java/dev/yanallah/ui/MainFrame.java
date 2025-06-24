@@ -8,8 +8,8 @@ import dev.yanallah.ui.panels.StocksPanel;
 import dev.yanallah.utils.References;
 
 import javax.swing.*;
-import java.util.List;
 import java.awt.*;
+import java.util.List;
 
 public class MainFrame extends JFrame {
     private JPanel navigationPanel;
@@ -104,6 +104,7 @@ public class MainFrame extends JFrame {
                 drawAllToasts(g);
             }
         };
+
         glassPane.setOpaque(false);  // transparent
         setGlassPane(glassPane);
         glassPane.setVisible(true);
@@ -295,7 +296,6 @@ public class MainFrame extends JFrame {
 
             startY -= (toastHeight + padding);
         }
-
         g2d.dispose();
     }
 
