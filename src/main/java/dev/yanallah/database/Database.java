@@ -353,7 +353,7 @@ public class Database {
         }
     }
 
-    private void updateStockQuantity(int stockItemId, int quantityChange) {
+    public void updateStockQuantity(int stockItemId, int quantityChange) {
         String sql = "UPDATE stock_items SET quantity_in_stock = quantity_in_stock + ? WHERE id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_URL);
@@ -369,12 +369,30 @@ public class Database {
 
     public void updateOrder(Order order) {
         String orderSql = "UPDATE orders SET client_id = ?, order_date = ?, status = ? WHERE id = ?";
+        String selectOldItemsSql = "SELECT stock_item_id, quantity FROM order_items WHERE order_id = ?";
         String deleteItemsSql = "DELETE FROM order_items WHERE order_id = ?";
 
         try (Connection conn = DriverManager.getConnection(DB_URL)) {
             conn.setAutoCommit(false);
             try {
-                // Mettre à jour la commande
+                // 1. Récupérer les anciens items pour restaurer le stock
+                List<OrderItem> oldItems = new ArrayList<>();
+                try (PreparedStatement pstmt = conn.prepareStatement(selectOldItemsSql)) {
+                    pstmt.setInt(1, order.getId());
+                    ResultSet rs = pstmt.executeQuery();
+                    while (rs.next()) {
+                        OrderItem oldItem = new OrderItem(0, order.getId(),
+                                rs.getInt("stock_item_id"), rs.getInt("quantity"), 0.0);
+                        oldItems.add(oldItem);
+                    }
+                }
+
+                // 2. Restaurer le stock des anciens items
+                for (OrderItem oldItem : oldItems) {
+                    updateStockQuantity(conn, oldItem.getStockItemId(), oldItem.getQuantity());
+                }
+
+                // 3. Mettre à jour la commande
                 try (PreparedStatement pstmt = conn.prepareStatement(orderSql)) {
                     pstmt.setInt(1, order.getClientId());
                     pstmt.setString(2, order.getOrderDate().toString());
@@ -383,13 +401,13 @@ public class Database {
                     pstmt.executeUpdate();
                 }
 
-                // Supprimer les anciens items
+                // 4. Supprimer les anciens items
                 try (PreparedStatement pstmt = conn.prepareStatement(deleteItemsSql)) {
                     pstmt.setInt(1, order.getId());
                     pstmt.executeUpdate();
                 }
 
-                // Ajouter les nouveaux items - Utilisez la même connexion
+                // 5. Ajouter les nouveaux items (qui vont décrémenter le stock)
                 for (OrderItem item : order.getItems()) {
                     addOrderItem(conn, order.getId(), item);
                 }

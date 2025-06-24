@@ -708,7 +708,7 @@ public class CommandesPanel extends JPanel {
         selectedOrder.getItems().clear();
         selectedOrder.getItems().addAll(currentOrderItems);
 
-        // Mettre à jour la commande dans la base de données
+        // Mettre à jour la commande dans la base de données (le stock est géré dans Database)
         MiniProject.getInstance().getDatabase().updateOrder(selectedOrder);
 
         // Fermer la fenêtre de dialogue
@@ -723,7 +723,6 @@ public class CommandesPanel extends JPanel {
         Toast.INSTANCE.success(this,
                 "Commande mise à jour avec succès",
                 "Succès");
-
     }
 
     private void addItemToOrder() {
@@ -797,7 +796,7 @@ public class CommandesPanel extends JPanel {
             newOrder.addItem(item);
         }
 
-        // Créer la commande dans la base de données
+        // Créer la commande dans la base de données (le stock est géré dans Database)
         MiniProject.getInstance().getDatabase().createOrder(newOrder);
 
         // Réinitialiser le formulaire
