@@ -1,8 +1,8 @@
 package dev.yanallah.models;
 
 public enum OrderStatus {
-    CREATED("Créée"),
-    PREPARING("En préparation"),
+    CREATED("Créée (pas payée)"),
+    PREPARING("En préparation (payée)"),
     SENT("Envoyée"),
     RECEIVED("Reçue"),
     CANCELLED("Annulée");

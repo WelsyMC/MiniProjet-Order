@@ -418,6 +418,9 @@ public class CommandesPanel extends JPanel {
         panel.setBackground(Color.WHITE);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
 
+        // Vérifier si on peut éditer les items (seulement si statut CREATED)
+        boolean canEditItems = selectedOrder == null || selectedOrder.getStatus() == OrderStatus.CREATED;
+
         // Panel pour la sélection du client et des items
         JPanel selectionPanel = new JPanel(new GridBagLayout());
         selectionPanel.setBackground(Color.WHITE);
@@ -428,6 +431,7 @@ public class CommandesPanel extends JPanel {
         // ComboBox pour les clients
         clientComboBox = new JComboBox<>(MiniProject.getInstance().getDatabase().getAllClients().toArray(new Client[0]));
         clientComboBox.setPreferredSize(new Dimension(200, 30));
+        clientComboBox.setEnabled(canEditItems); // Désactiver si on ne peut pas éditer les items
         if (selectedOrder != null) {
             for (int i = 0; i < clientComboBox.getItemCount(); i++) {
                 Client client = clientComboBox.getItemAt(i);
@@ -465,6 +469,7 @@ public class CommandesPanel extends JPanel {
         stockItems.addAll(MiniProject.getInstance().getDatabase().getAllStockItems());
         stockItemComboBox = new JComboBox<>(stockItems.toArray(new StockItem[0]));
         stockItemComboBox.setPreferredSize(new Dimension(200, 30));
+        stockItemComboBox.setEnabled(canEditItems); // Désactiver si on ne peut pas éditer les items
 
         // Renderer personnalisé pour afficher "-- Sélectionner un produit --" pour l'élément null
         stockItemComboBox.setRenderer(new DefaultListCellRenderer() {
@@ -486,6 +491,7 @@ public class CommandesPanel extends JPanel {
         SpinnerNumberModel spinnerModel = new SpinnerNumberModel(1, 1, 100, 1);
         quantitySpinner = new JSpinner(spinnerModel);
         quantitySpinner.setPreferredSize(new Dimension(100, 30));
+        quantitySpinner.setEnabled(canEditItems); // Désactiver si on ne peut pas éditer les items
 
         // Ajouter un écouteur sur le champ de texte du spinner
         JSpinner.NumberEditor editor = (JSpinner.NumberEditor) quantitySpinner.getEditor();
@@ -549,6 +555,7 @@ public class CommandesPanel extends JPanel {
         JButton addItemButton = new JButton("Ajouter l'item");
         addItemButton.setBackground(new Color(70, 130, 180));
         addItemButton.setFocusPainted(false);
+        addItemButton.setEnabled(canEditItems); // Désactiver si on ne peut pas éditer les items
         addItemButton.addActionListener(e -> addItemToOrder());
 
         // Ajout des composants au panel de sélection
@@ -570,22 +577,33 @@ public class CommandesPanel extends JPanel {
             statusComboBox.setEnabled(false);
         }
 
-        gbc.gridx = 0;
-        gbc.gridy = 2;
-        selectionPanel.add(new JLabel("Produit:"), gbc);
-        gbc.gridx = 1;
-        selectionPanel.add(stockItemComboBox, gbc);
+        // Afficher les champs produit/quantité seulement si on peut éditer les items
+        if (canEditItems) {
+            gbc.gridx = 0;
+            gbc.gridy = 2;
+            selectionPanel.add(new JLabel("Produit:"), gbc);
+            gbc.gridx = 1;
+            selectionPanel.add(stockItemComboBox, gbc);
 
-        gbc.gridx = 0;
-        gbc.gridy = 3;
-        selectionPanel.add(new JLabel("Quantité:"), gbc);
-        gbc.gridx = 1;
-        selectionPanel.add(quantitySpinner, gbc);
+            gbc.gridx = 0;
+            gbc.gridy = 3;
+            selectionPanel.add(new JLabel("Quantité:"), gbc);
+            gbc.gridx = 1;
+            selectionPanel.add(quantitySpinner, gbc);
 
-        gbc.gridx = 1;
-        gbc.gridy = 4;
-        gbc.anchor = GridBagConstraints.EAST;
-        selectionPanel.add(addItemButton, gbc);
+            gbc.gridx = 1;
+            gbc.gridy = 4;
+            gbc.anchor = GridBagConstraints.EAST;
+            selectionPanel.add(addItemButton, gbc);
+        } else {
+            // Afficher un message d'information si on ne peut pas éditer les items
+            gbc.gridx = 0;
+            gbc.gridy = 2;
+            gbc.gridwidth = 2;
+            JLabel infoLabel = new JLabel("<html><i>Les items ne peuvent être modifiés que pour les commandes avec le statut 'Créée'</i></html>");
+            infoLabel.setForeground(new Color(150, 150, 150));
+            selectionPanel.add(infoLabel, gbc);
+        }
 
         // Table pour les items de la commande en cours
         String[] orderItemColumns = {"Produit", "Quantité", "Prix unitaire", "Total"};
@@ -598,28 +616,45 @@ public class CommandesPanel extends JPanel {
         orderItemsTable = new JTable(orderItemsTableModel);
         orderItemsTable.setRowHeight(25);
 
-        // Ajouter le double-clic sur la table des items
-        orderItemsTable.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                if (evt.getClickCount() == 2) {
-                    int row = orderItemsTable.getSelectedRow();
-                    if (row != -1) {
-                        OrderItem item = currentOrderItems.get(row);
-                        showEditItemDialog(item, row);
+        // Ajouter le double-clic sur la table des items seulement si on peut éditer
+        if (canEditItems) {
+            orderItemsTable.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseClicked(java.awt.event.MouseEvent evt) {
+                    if (evt.getClickCount() == 2) {
+                        int row = orderItemsTable.getSelectedRow();
+                        if (row != -1) {
+                            OrderItem item = currentOrderItems.get(row);
+                            showEditItemDialog(item, row);
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
 
         JScrollPane orderItemsScrollPane = new JScrollPane(orderItemsTable);
 
         // Bouton pour sauvegarder la commande
-        JButton saveOrderButton = new JButton(selectedOrder != null ? "Mettre à jour la commande" : "Créer la commande");
+        String buttonText;
+        if (selectedOrder != null) {
+            if (canEditItems) {
+                buttonText = "Mettre à jour la commande";
+            } else {
+                buttonText = "Mettre à jour le statut";
+            }
+        } else {
+            buttonText = "Créer la commande";
+        }
+
+        JButton saveOrderButton = new JButton(buttonText);
         saveOrderButton.setBackground(new Color(46, 139, 87));
         saveOrderButton.setFocusPainted(false);
         saveOrderButton.addActionListener(e -> {
             if (selectedOrder != null) {
-                updateOrder();
+                if (canEditItems) {
+                    updateOrder();
+                } else {
+                    updateOrderStatusOnly();
+                }
             } else {
                 createOrder();
             }
@@ -722,6 +757,29 @@ public class CommandesPanel extends JPanel {
 
         Toast.INSTANCE.success(this,
                 "Commande mise à jour avec succès",
+                "Succès");
+    }
+
+    private void updateOrderStatusOnly() {
+        OrderStatus selectedStatus = (OrderStatus) statusComboBox.getSelectedItem();
+
+        // Mettre à jour seulement le statut dans la base de données
+        MiniProject.getInstance().getDatabase().updateOrderStatus(selectedOrder.getId(), selectedStatus);
+
+        // Mettre à jour l'objet local
+        selectedOrder.setStatus(selectedStatus);
+
+        // Fermer la fenêtre de dialogue
+        editOrderDialog.dispose();
+
+        // Réinitialiser la commande sélectionnée
+        selectedOrder = null;
+
+        // Rafraîchir la liste des commandes
+        refreshData();
+
+        Toast.INSTANCE.success(this,
+                "Statut de la commande mis à jour avec succès",
                 "Succès");
     }
 

@@ -274,7 +274,7 @@ public class Database {
             }
 
             // Mettre à jour le stock
-            updateStockQuantity(item.getStockItemId(), -item.getQuantity());
+            updateStock(item.getStockItem(), item.getQuantity());
         } catch (SQLException e) {
             e.printStackTrace();
         }
