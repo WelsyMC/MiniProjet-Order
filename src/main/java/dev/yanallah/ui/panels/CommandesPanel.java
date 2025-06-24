@@ -1,7 +1,9 @@
 package dev.yanallah.ui.panels;
 
-import dev.yanallah.MiniProject;
 import dev.yanallah.models.*;
+import dev.yanallah.services.ClientService;
+import dev.yanallah.services.OrderService;
+import dev.yanallah.services.StockService;
 import dev.yanallah.toast.Toast;
 import dev.yanallah.utils.BonGenerator;
 
@@ -15,7 +17,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CommandesPanel extends JPanel {
-    private List<Order> orders;
+    private final OrderService orderService;
+    private final ClientService clientService;
+    private final StockService stockService;
+    
     private JTable ordersTable;
     private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
@@ -32,9 +37,12 @@ public class CommandesPanel extends JPanel {
     private Order selectedOrder;
 
     public CommandesPanel() {
+        this.orderService = OrderService.getInstance();
+        this.clientService = ClientService.getInstance();
+        this.stockService = StockService.getInstance();
+        
         this.initComponents();
-        this.orders = MiniProject.getInstance().getDatabase().getAllOrders();
-        this.loadOrderData();
+        this.subscribeToUpdates();
     }
 
     private void initComponents() {
@@ -72,8 +80,11 @@ public class CommandesPanel extends JPanel {
                 if (evt.getClickCount() == 2) {
                     int row = ordersTable.getSelectedRow();
                     if (row != -1) {
-                        selectedOrder = orders.get(row);
-                        showEditOrderDialog();
+                        List<Order> currentOrders = orderService.getOrdersObservable().getValue();
+                        if (currentOrders != null && row < currentOrders.size()) {
+                            selectedOrder = currentOrders.get(row);
+                            showEditOrderDialog();
+                        }
                     }
                 }
             }
@@ -145,8 +156,17 @@ public class CommandesPanel extends JPanel {
         viewOrderButton.addActionListener(e -> {
             int selectedRow = ordersTable.getSelectedRow();
             if (selectedRow != -1) {
-                selectedOrder = orders.get(selectedRow);
-                showViewOrderDialog();
+                List<Order> currentOrders = orderService.getOrdersObservable().getValue();
+                if (currentOrders != null && selectedRow < currentOrders.size()) {
+                    selectedOrder = currentOrders.get(selectedRow);
+                    showViewOrderDialog();
+                } else {
+                    Toast.INSTANCE.warn(
+                            this,
+                            "Erreur lors de la sélection de la commande.",
+                            "Erreur"
+                    );
+                }
             } else {
                 Toast.INSTANCE.warn(
                         this,
@@ -440,7 +460,8 @@ public class CommandesPanel extends JPanel {
         gbc.insets = new Insets(3, 3, 3, 3);
 
         // ComboBox pour les clients
-        clientComboBox = new JComboBox<>(MiniProject.getInstance().getDatabase().getAllClients().toArray(new Client[0]));
+        List<Client> clients = clientService.getClientsObservable().getValue();
+        clientComboBox = new JComboBox<>(clients != null ? clients.toArray(new Client[0]) : new Client[0]);
         clientComboBox.setPreferredSize(new Dimension(200, 30));
         clientComboBox.setEnabled(canEditItems); // Désactiver si on ne peut pas éditer les items
         if (selectedOrder != null) {
@@ -477,7 +498,10 @@ public class CommandesPanel extends JPanel {
         // ComboBox pour les items de stock
         List<StockItem> stockItems = new ArrayList<>();
         stockItems.add(null); // Ajouter un choix vide
-        stockItems.addAll(MiniProject.getInstance().getDatabase().getAllStockItems());
+        List<StockItem> availableStocks = stockService.getStocksObservable().getValue();
+        if (availableStocks != null) {
+            stockItems.addAll(availableStocks);
+        }
         stockItemComboBox = new JComboBox<>(stockItems.toArray(new StockItem[0]));
         stockItemComboBox.setPreferredSize(new Dimension(200, 30));
         stockItemComboBox.setEnabled(canEditItems); // Désactiver si on ne peut pas éditer les items
@@ -754,10 +778,9 @@ public class CommandesPanel extends JPanel {
         selectedOrder.getItems().clear();
         selectedOrder.getItems().addAll(currentOrderItems);
 
-        MiniProject.getInstance().getDatabase().updateOrder(selectedOrder);
+        orderService.updateOrder(selectedOrder);
         editOrderDialog.dispose();
         selectedOrder = null;
-        refreshData();
 
         Toast.INSTANCE.success(this,
                 "Commande mise à jour avec succès",
@@ -767,8 +790,8 @@ public class CommandesPanel extends JPanel {
     private void updateOrderStatusOnly() {
         OrderStatus selectedStatus = (OrderStatus) statusComboBox.getSelectedItem();
 
-        // Mettre à jour seulement le statut dans la base de données
-        MiniProject.getInstance().getDatabase().updateOrderStatus(selectedOrder.getId(), selectedStatus);
+        // Mettre à jour seulement le statut via le service
+        orderService.updateOrderStatus(selectedOrder.getId(), selectedStatus);
 
         // Mettre à jour l'objet local
         selectedOrder.setStatus(selectedStatus);
@@ -778,9 +801,6 @@ public class CommandesPanel extends JPanel {
 
         // Réinitialiser la commande sélectionnée
         selectedOrder = null;
-
-        // Rafraîchir la liste des commandes
-        refreshData();
 
         Toast.INSTANCE.success(this,
                 "Statut de la commande mis à jour avec succès",
@@ -858,8 +878,8 @@ public class CommandesPanel extends JPanel {
             newOrder.addItem(item);
         }
 
-        // Créer la commande dans la base de données (le stock est géré dans Database)
-        MiniProject.getInstance().getDatabase().createOrder(newOrder);
+        // Créer la commande via le service
+        orderService.createOrder(newOrder);
 
         // Réinitialiser le formulaire
         currentOrderItems.clear();
@@ -871,32 +891,36 @@ public class CommandesPanel extends JPanel {
         // Réinitialiser la commande sélectionnée
         selectedOrder = null;
 
-        // Rafraîchir la liste des commandes
-        refreshData();
-
         Toast.INSTANCE.success(this,
                 "Commande créée avec succès",
                 "Succès");
     }
 
-    private void loadOrderData() {
-        tableModel.setRowCount(0);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private void subscribeToUpdates() {
+        orderService.getOrdersObservable().subscribe(this::loadOrderData);
+    }
 
-        for (Order order : orders) {
-            Object[] rowData = {
-                    order.getId(),
-                    order.getClient().toString(),
-                    order.getOrderDate().format(formatter),
-                    order.getStatus().getDisplayName(),
-                    String.format("%.2f €", order.getTotalAmount())
-            };
-            tableModel.addRow(rowData);
-        }
+    private void loadOrderData(List<Order> orders) {
+        SwingUtilities.invokeLater(() -> {
+            tableModel.setRowCount(0);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+            if (orders != null) {
+                for (Order order : orders) {
+                    Object[] rowData = {
+                            order.getId(),
+                            order.getClient().toString(),
+                            order.getOrderDate().format(formatter),
+                            order.getStatus().getDisplayName(),
+                            String.format("%.2f €", order.getTotalAmount())
+                    };
+                    tableModel.addRow(rowData);
+                }
+            }
+        });
     }
 
     public void refreshData() {
-        this.orders = MiniProject.getInstance().getDatabase().getAllOrders();
-        this.loadOrderData();
+        orderService.refreshOrders();
     }
 } 

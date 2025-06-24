@@ -1,7 +1,7 @@
 package dev.yanallah.ui.panels;
 
-import dev.yanallah.MiniProject;
 import dev.yanallah.models.StockItem;
+import dev.yanallah.services.StockService;
 import dev.yanallah.toast.Toast;
 
 import javax.swing.*;
@@ -14,6 +14,7 @@ import java.util.Locale;
 
 public class StocksPanel extends JPanel {
 
+    private final StockService stockService;
     private List<StockItem> stocks;
     private JTable stocksTable;
     private DefaultTableModel tableModel;
@@ -22,9 +23,9 @@ public class StocksPanel extends JPanel {
     private JLabel totalItemsLabel;
 
     public StocksPanel() {
+        this.stockService = StockService.getInstance();
         this.initComponents();
-        this.stocks = MiniProject.getInstance().getDatabase().getAllStockItems();
-        this.loadStockData();
+        this.subscribeToStockUpdates();
     }
 
     private void initComponents() {
@@ -131,22 +132,28 @@ public class StocksPanel extends JPanel {
         this.add(infoPanel, BorderLayout.SOUTH);
     }
 
-    private void loadStockData() {
-        // Vider la table
-        tableModel.setRowCount(0);
+    private void loadStockData(List<StockItem> stockItems) {
+        SwingUtilities.invokeLater(() -> {
+            this.stocks = stockItems; // Garder une référence pour les opérations locales
 
-        // Ajouter les données des stocks
-        for (StockItem item : stocks) {
-            Object[] rowData = {
-                    item.getName(),
-                    item.getQuantityInStock(),
-                    item.getPrice()
-            };
-            tableModel.addRow(rowData);
-        }
+            // Vider la table
+            tableModel.setRowCount(0);
 
-        // Mettre à jour les informations
-        updateTotalItems();
+            // Ajouter les données des stocks
+            if (stockItems != null) {
+                for (StockItem item : stockItems) {
+                    Object[] rowData = {
+                            item.getName(),
+                            item.getQuantityInStock(),
+                            item.getPrice()
+                    };
+                    tableModel.addRow(rowData);
+                }
+            }
+
+            // Mettre à jour les informations
+            updateTotalItems();
+        });
     }
 
     private void updateTotalItems() {
@@ -159,12 +166,14 @@ public class StocksPanel extends JPanel {
      * @param item L'article dont la quantité a été modifiée
      * @param newQuantity La nouvelle quantité
      */
+    private void subscribeToStockUpdates() {
+        stockService.getStocksObservable().subscribe(this::loadStockData);
+    }
+    
     protected void onQuantityChanged(StockItem item, int newQuantity) {
-        if(item.getQuantityInStock() == newQuantity)return;
+        if (item.getQuantityInStock() == newQuantity) return;
 
-        item.setQuantityInStock(newQuantity);
-
-        MiniProject.getInstance().getDatabase().updateStock(item, newQuantity);
+        stockService.updateStock(item, newQuantity);
         Toast.INSTANCE.success(
                 this,
                 "Quantité modifiée !",
@@ -178,7 +187,6 @@ public class StocksPanel extends JPanel {
 
     // Méthode pour rafraîchir les données
     public void refreshData() {
-        this.stocks = MiniProject.getInstance().getDatabase().getAllStockItems();
-        this.loadStockData();
+        stockService.refreshStocks();
     }
 }

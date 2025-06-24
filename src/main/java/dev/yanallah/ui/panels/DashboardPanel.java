@@ -1,25 +1,27 @@
 package dev.yanallah.ui.panels;
 
-import dev.yanallah.MiniProject;
-import dev.yanallah.models.*;
+import dev.yanallah.models.Order;
+import dev.yanallah.models.OrderStatus;
+import dev.yanallah.models.StockItem;
+import dev.yanallah.services.DashboardService;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class DashboardPanel extends JPanel {
-    
-    private List<Client> clients;
-    private List<Order> orders;
-    private List<StockItem> stockItems;
+
+    private final DashboardService dashboardService;
+    private DashboardService.DashboardData currentData;
+
+    // Composants UI qui seront mis à jour dynamiquement
+    private JPanel statsCardsPanel;
+    private JPanel chartsPanel;
+    private JPanel detailsPanel;
     
     // Couleurs pour le thème
     private static final Color PRIMARY_COLOR = new Color(70, 130, 180);
@@ -31,25 +33,10 @@ public class DashboardPanel extends JPanel {
     private static final Color CARD_BACKGROUND = Color.WHITE;
 
     public DashboardPanel(){
-        // Initialiser les listes pour éviter les NullPointerException
-        this.clients = new ArrayList<>();
-        this.orders = new ArrayList<>();
-        this.stockItems = new ArrayList<>();
+        this.dashboardService = DashboardService.getInstance();
         
         this.initComponents();
-        this.loadData();
-        this.updateDashboard();
-    }
-    
-    private void loadData() {
-        this.clients = MiniProject.getInstance().getDatabase().getAllClients();
-        this.orders = MiniProject.getInstance().getDatabase().getAllOrders();
-        this.stockItems = MiniProject.getInstance().getDatabase().getAllStockItems();
-        
-        // S'assurer que les listes ne sont jamais null
-        if (this.clients == null) this.clients = new ArrayList<>();
-        if (this.orders == null) this.orders = new ArrayList<>();
-        if (this.stockItems == null) this.stockItems = new ArrayList<>();
+        this.subscribeToDashboardUpdates();
     }
 
     public void initComponents(){
@@ -87,6 +74,10 @@ public class DashboardPanel extends JPanel {
         
         return headerPanel;
     }
+
+    private void subscribeToDashboardUpdates() {
+        dashboardService.getDashboardDataObservable().subscribe(this::updateDashboardComponents);
+    }
     
     private JPanel createMainPanel() {
         JPanel mainPanel = new JPanel(new GridBagLayout());
@@ -99,49 +90,55 @@ public class DashboardPanel extends JPanel {
         
         // Première ligne - Cartes de statistiques
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 1; gbc.weighty = 0.3;
-        mainPanel.add(createStatsCardsPanel(), gbc);
+        statsCardsPanel = new JPanel();
+        mainPanel.add(statsCardsPanel, gbc);
         
         // Deuxième ligne - Graphiques et analyses
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 1; gbc.weighty = 0.4;
-        mainPanel.add(createChartsPanel(), gbc);
+        chartsPanel = new JPanel();
+        mainPanel.add(chartsPanel, gbc);
         
         // Troisième ligne - Informations détaillées
         gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 1; gbc.weighty = 0.3;
-        mainPanel.add(createDetailsPanel(), gbc);
+        detailsPanel = new JPanel();
+        mainPanel.add(detailsPanel, gbc);
         
         return mainPanel;
     }
-    
-    private JPanel createStatsCardsPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 4, 15, 0));
-        panel.setBackground(LIGHT_GRAY);
+
+    private void updateDashboardComponents(DashboardService.DashboardData data) {
+        SwingUtilities.invokeLater(() -> {
+            this.currentData = data;
+            if (data != null) {
+                updateStatsCardsPanel(data);
+                updateChartsPanel(data);
+                updateDetailsPanel(data);
+                revalidate();
+                repaint();
+            }
+        });
+    }
+
+    private void updateStatsCardsPanel(DashboardService.DashboardData data) {
+        statsCardsPanel.removeAll();
+        statsCardsPanel.setLayout(new GridLayout(1, 4, 15, 0));
+        statsCardsPanel.setBackground(LIGHT_GRAY);
         
         // Carte Clients
-        int totalClients = clients.size();
-        panel.add(createStatCard("Clients", String.valueOf(totalClients), 
+        statsCardsPanel.add(createStatCard("Clients", String.valueOf(data.getTotalClients()), 
             "Total des clients enregistrés", SUCCESS_COLOR));
         
         // Carte Commandes
-        int totalOrders = orders.size();
-        panel.add(createStatCard("Commandes", String.valueOf(totalOrders), 
+        statsCardsPanel.add(createStatCard("Commandes", String.valueOf(data.getTotalOrders()), 
             "Total des commandes", INFO_COLOR));
         
         // Carte Chiffre d'affaires
-        double totalRevenue = orders.stream()
-            .mapToDouble(Order::getTotalAmount)
-            .sum();
-
-        panel.add(createStatCard("CA Total", String.format("%.2f €", totalRevenue), 
+        statsCardsPanel.add(createStatCard("CA Total", String.format("%.2f €", data.getTotalRevenue()), 
             "Chiffre d'affaires total", PRIMARY_COLOR));
         
         // Carte Stock
-        int totalStockItems = stockItems.stream()
-            .mapToInt(StockItem::getQuantityInStock)
-            .sum();
-        panel.add(createStatCard("Articles", String.valueOf(totalStockItems), 
+        statsCardsPanel.add(createStatCard("Articles", String.valueOf(data.getTotalStockItems()), 
             "Total articles en stock", WARNING_COLOR));
-        
-        return panel;
     }
     
     private JPanel createStatCard(String title, String value, String description, Color accentColor) {
@@ -195,21 +192,20 @@ public class DashboardPanel extends JPanel {
         
         return card;
     }
-    
-    private JPanel createChartsPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 2, 15, 0));
-        panel.setBackground(LIGHT_GRAY);
+
+    private void updateChartsPanel(DashboardService.DashboardData data) {
+        chartsPanel.removeAll();
+        chartsPanel.setLayout(new GridLayout(1, 2, 15, 0));
+        chartsPanel.setBackground(LIGHT_GRAY);
         
         // Graphique des statuts de commandes
-        panel.add(createOrderStatusChart());
+        chartsPanel.add(createOrderStatusChart(data));
         
         // Graphique des stocks faibles
-        panel.add(createLowStockChart());
-        
-        return panel;
+        chartsPanel.add(createLowStockChart(data));
     }
-    
-    private JPanel createOrderStatusChart() {
+
+    private JPanel createOrderStatusChart(DashboardService.DashboardData data) {
         JPanel chartPanel = new JPanel(new BorderLayout());
         chartPanel.setBackground(CARD_BACKGROUND);
         chartPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -220,20 +216,25 @@ public class DashboardPanel extends JPanel {
         JLabel titleLabel = new JLabel("Répartition des Commandes par Statut");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titleLabel.setForeground(new Color(50, 50, 50));
-        
-        // Compter les commandes par statut
-        Map<OrderStatus, Long> statusCounts = orders.stream()
-            .collect(Collectors.groupingBy(Order::getStatus, Collectors.counting()));
-        
-        JPanel chartContent = new JPanel(new GridLayout(statusCounts.size() + 1, 1, 5, 5));
+
+        // Utiliser les données du service
+        Map<OrderStatus, Integer> statusCounts = data.getOrdersByStatus();
+
+        JPanel chartContent = new JPanel(new GridLayout(Math.max(statusCounts.size(), 1), 1, 5, 5));
         chartContent.setBackground(CARD_BACKGROUND);
-        
-        int maxCount = statusCounts.values().stream().mapToInt(Long::intValue).max().orElse(1);
-        
-        for (Map.Entry<OrderStatus, Long> entry : statusCounts.entrySet()) {
-            JPanel barPanel = createStatusBar(entry.getKey().getDisplayName(), 
-                entry.getValue().intValue(), maxCount, getStatusColor(entry.getKey()));
-            chartContent.add(barPanel);
+
+        if (statusCounts.isEmpty()) {
+            JLabel noDataLabel = new JLabel("Aucune commande");
+            noDataLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            chartContent.add(noDataLabel);
+        } else {
+            int maxCount = statusCounts.values().stream().mapToInt(Integer::intValue).max().orElse(1);
+
+            for (Map.Entry<OrderStatus, Integer> entry : statusCounts.entrySet()) {
+                JPanel barPanel = createStatusBar(entry.getKey().getDisplayName(),
+                        entry.getValue(), maxCount, getStatusColor(entry.getKey()));
+                chartContent.add(barPanel);
+            }
         }
         
         chartPanel.add(titleLabel, BorderLayout.NORTH);
@@ -241,8 +242,8 @@ public class DashboardPanel extends JPanel {
         
         return chartPanel;
     }
-    
-    private JPanel createLowStockChart() {
+
+    private JPanel createLowStockChart(DashboardService.DashboardData data) {
         JPanel chartPanel = new JPanel(new BorderLayout());
         chartPanel.setBackground(CARD_BACKGROUND);
         chartPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -253,10 +254,9 @@ public class DashboardPanel extends JPanel {
         JLabel titleLabel = new JLabel("Articles avec Stock Faible (< 10)");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         titleLabel.setForeground(new Color(50, 50, 50));
-        
-        // Filtrer les articles avec stock faible
-        List<StockItem> lowStockItems = stockItems.stream()
-            .filter(item -> item.getQuantityInStock() < 10)
+
+        // Utiliser les données du service
+        List<StockItem> lowStockItems = data.getLowStockItems().stream()
             .limit(5) // Limiter à 5 pour l'affichage
             .collect(Collectors.toList());
         
@@ -284,21 +284,20 @@ public class DashboardPanel extends JPanel {
         
         return chartPanel;
     }
-    
-    private JPanel createDetailsPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 2, 15, 0));
-        panel.setBackground(LIGHT_GRAY);
+
+    private void updateDetailsPanel(DashboardService.DashboardData data) {
+        detailsPanel.removeAll();
+        detailsPanel.setLayout(new GridLayout(1, 2, 15, 0));
+        detailsPanel.setBackground(LIGHT_GRAY);
         
         // Dernières commandes
-        panel.add(createRecentOrdersPanel());
+        detailsPanel.add(createRecentOrdersPanel(data));
         
         // Statistiques avancées
-        panel.add(createAdvancedStatsPanel());
-        
-        return panel;
+        detailsPanel.add(createAdvancedStatsPanel(data));
     }
-    
-    private JPanel createRecentOrdersPanel() {
+
+    private JPanel createRecentOrdersPanel(DashboardService.DashboardData data) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(CARD_BACKGROUND);
         panel.setBorder(BorderFactory.createCompoundBorder(
@@ -313,17 +312,20 @@ public class DashboardPanel extends JPanel {
         JPanel ordersContent = new JPanel();
         ordersContent.setLayout(new BoxLayout(ordersContent, BoxLayout.Y_AXIS));
         ordersContent.setBackground(CARD_BACKGROUND);
-        
-        // Prendre les 5 dernières commandes
-        List<Order> recentOrders = orders.stream()
-            .sorted((o1, o2) -> o2.getOrderDate().compareTo(o1.getOrderDate()))
-            .limit(5)
-            .collect(Collectors.toList());
+
+        // Utiliser les données du service
+        List<Order> recentOrders = data.getRecentOrders();
         
         for (Order order : recentOrders) {
             JPanel orderPanel = createOrderSummaryPanel(order);
             ordersContent.add(orderPanel);
             ordersContent.add(Box.createVerticalStrut(8));
+        }
+
+        if (recentOrders.isEmpty()) {
+            JLabel noDataLabel = new JLabel("Aucune commande récente");
+            noDataLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            ordersContent.add(noDataLabel);
         }
         
         JScrollPane scrollPane = new JScrollPane(ordersContent);
@@ -335,8 +337,8 @@ public class DashboardPanel extends JPanel {
         
         return panel;
     }
-    
-    private JPanel createAdvancedStatsPanel() {
+
+    private JPanel createAdvancedStatsPanel(DashboardService.DashboardData data) {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(CARD_BACKGROUND);
         panel.setBorder(BorderFactory.createCompoundBorder(
@@ -351,35 +353,38 @@ public class DashboardPanel extends JPanel {
         JPanel statsContent = new JPanel();
         statsContent.setLayout(new BoxLayout(statsContent, BoxLayout.Y_AXIS));
         statsContent.setBackground(CARD_BACKGROUND);
-        
-        // Calcul des statistiques
-        double avgOrderValue = orders.isEmpty() ? 0 :
-            orders.stream().mapToDouble(Order::getTotalAmount).average().orElse(0);
-        
-        double totalStockValue = stockItems.stream()
+
+        // Calcul des statistiques basées sur les données du service
+        double avgOrderValue = data.getTotalOrders() == 0 ? 0 :
+                data.getTotalRevenue() / data.getTotalOrders();
+
+        // Valeur totale du stock (estimée - on pourrait ajouter cette donnée au service)
+        double totalStockValue = data.getLowStockItems().stream()
             .mapToDouble(item -> item.getPrice() * item.getQuantityInStock())
             .sum();
-        
-        long pendingOrders = orders.stream()
-            .filter(order -> order.getStatus() == OrderStatus.CREATED || 
-                           order.getStatus() == OrderStatus.PREPARING)
-            .count();
+
+        // Commandes en attente
+        int pendingOrders = data.getOrdersByStatus().getOrDefault(OrderStatus.CREATED, 0) +
+                data.getOrdersByStatus().getOrDefault(OrderStatus.PREPARING, 0);
+
+        // Nombre de produits différents
+        int productTypes = data.getLowStockItems().size(); // Approximation
         
         // Affichage des statistiques
         statsContent.add(createStatRow("€", "Valeur moyenne commande", 
             String.format("%.2f €", avgOrderValue)));
         statsContent.add(Box.createVerticalStrut(12));
-        
-        statsContent.add(createStatRow("€", "Valeur totale du stock", 
+
+        statsContent.add(createStatRow("€", "Valeur stock faible", 
             String.format("%.2f €", totalStockValue)));
         statsContent.add(Box.createVerticalStrut(12));
         
         statsContent.add(createStatRow("!", "Commandes en attente", 
             String.valueOf(pendingOrders)));
         statsContent.add(Box.createVerticalStrut(12));
-        
-        statsContent.add(createStatRow("#", "Types de produits", 
-            String.valueOf(stockItems.size())));
+
+        statsContent.add(createStatRow("#", "Articles stock faible",
+                String.valueOf(productTypes)));
         
         panel.add(titleLabel, BorderLayout.NORTH);
         panel.add(statsContent, BorderLayout.CENTER);
@@ -511,10 +516,6 @@ public class DashboardPanel extends JPanel {
     }
     
     public void updateDashboard() {
-        loadData();
-        removeAll();
-        initComponents();
-        revalidate();
-        repaint();
+        dashboardService.refreshDashboard();
     }
 }

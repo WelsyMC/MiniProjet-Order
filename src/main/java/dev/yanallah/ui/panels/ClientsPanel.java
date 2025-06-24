@@ -1,7 +1,7 @@
 package dev.yanallah.ui.panels;
 
-import dev.yanallah.MiniProject;
 import dev.yanallah.models.Client;
+import dev.yanallah.services.ClientService;
 import dev.yanallah.toast.Toast;
 
 import javax.swing.*;
@@ -11,7 +11,7 @@ import java.awt.*;
 import java.util.List;
 
 public class ClientsPanel extends JPanel {
-    private List<Client> clients;
+    private final ClientService clientService;
     private JTable clientsTable;
     private DefaultTableModel tableModel;
     private JScrollPane scrollPane;
@@ -19,9 +19,9 @@ public class ClientsPanel extends JPanel {
     private JTextField nomField, prenomField, emailField, telephoneField, adresseField;
 
     public ClientsPanel() {
+        this.clientService = ClientService.getInstance();
         this.initComponents();
-        this.clients = MiniProject.getInstance().getDatabase().getAllClients();
-        this.loadClientData();
+        this.subscribeToClientUpdates();
     }
 
     private void initComponents() {
@@ -148,9 +148,9 @@ public class ClientsPanel extends JPanel {
             return;
         }
 
-        // Ajouter le client à la base de données
+        // Ajouter le client via le service
         Client newClient = new Client(
-                clients.size() + 1, // ID temporaire
+                0, // L'ID sera généré par la base de données
                 nom,
                 prenom,
                 email,
@@ -158,39 +158,47 @@ public class ClientsPanel extends JPanel {
                 adresse
         );
 
-        MiniProject.getInstance().getDatabase().addClient(newClient);
+        clientService.addClient(newClient);
         Toast.INSTANCE.success(this,
                 "Le client a été créé avec succès !",
                 "Succès - Création de client");
-        refreshData();
 
         // Réinitialiser les champs
+        clearForm();
+    }
+
+    private void subscribeToClientUpdates() {
+        clientService.getClientsObservable().subscribe(this::loadClientData);
+    }
+
+    private void loadClientData(List<Client> clients) {
+        SwingUtilities.invokeLater(() -> {
+            tableModel.setRowCount(0);
+            if (clients != null) {
+                for (Client client : clients) {
+                    Object[] rowData = {
+                            client.getId(),
+                            client.getNom(),
+                            client.getPrenom(),
+                            client.getEmail(),
+                            client.getTelephone(),
+                            client.getAdresse()
+                    };
+                    tableModel.addRow(rowData);
+                }
+            }
+        });
+    }
+
+    private void clearForm() {
         nomField.setText("");
         prenomField.setText("");
         emailField.setText("");
         telephoneField.setText("");
         adresseField.setText("");
-
-
-    }
-
-    private void loadClientData() {
-        tableModel.setRowCount(0);
-        for (Client client : clients) {
-            Object[] rowData = {
-                    client.getId(),
-                    client.getNom(),
-                    client.getPrenom(),
-                    client.getEmail(),
-                    client.getTelephone(),
-                    client.getAdresse()
-            };
-            tableModel.addRow(rowData);
-        }
     }
 
     public void refreshData() {
-        this.clients = MiniProject.getInstance().getDatabase().getAllClients();
-        this.loadClientData();
+        clientService.refreshClients();
     }
 } 
